@@ -109,7 +109,17 @@ tools/       美术/音频/VO/小人生成、资产校验、自动巡演与角�
 ```powershell
 .\run_game.bat
 ```
-脚本会依次查找 `.tools\godot\Godot_v4.3-stable_win64.exe`、`godot` 命令或常见安装路径。
+脚本查找 Godot 的顺序（**任意 4.x 版本都可用，不要求文件名带 4.3**）：
+
+1. `.tools\godot\godot_path.txt`（可选，把 Godot 的完整路径写进去，一行一个）；
+2. `.tools\godot\Godot*win64.exe`（推荐：把官方 zip 解出来的 exe 丢进这个目录即可，`.tools/` 已在 `.gitignore` 中）；
+3. `%ProgramFiles%\Godot`、`%ProgramFiles(x86)%\Godot`、`%LOCALAPPDATA%\Programs\Godot`；
+4. `PATH` 里的 `godot` 命令。
+
+> 注意 Windows 解压 zip 的坑：把 `Godot_v4.x-stable_win64.exe` 解压时，若选了“解压到同名文件夹”，会得到一个**以 `.exe` 结尾的目录**，真正的 exe 在里面。脚本会递归扫描 `.tools\godot`，但不会去你的下载目录里翻，所以手动放进来或写 `godot_path.txt` 最省事。
+>
+> 只想验证“有没有认到引擎”而不启动游戏：`set GMWB_NO_LAUNCH=1` 再运行 `run_game.bat`，它会打印解析到的 Godot 路径后退出。
+
 启动后会保留一个控制台窗口（可最小化），等游戏结束后再关闭；这样游戏进程不会被父进程提前回收，也能直接看到引擎退出码。
 脚本还会把 Godot 的 `user://`（日志、着色器缓存）重定向到项目内的 `.godot_userdata\`，避免 `%APPDATA%` 不可写时 Godot 直接以 `0xC0000005` 崩溃。
 
@@ -117,7 +127,7 @@ tools/       美术/音频/VO/小人生成、资产校验、自动巡演与角�
 > 1. 按 `Alt+Tab` / 看任务栏，找 `Good Morning! - Word Binder (DEBUG)`；
 > 2. 运行 `run_game_debug.bat`，它会把 Godot 的完整控制台输出留在窗口里；
 > 3. 日志在 `.godot_userdata\Godot\app_userdata\Good Morning! - Word Binder\logs\godot.log`；
-> 4. 确认 `.tools\godot\Godot_v4.3-stable_win64.exe` 存在（或已安装 Godot 4.3+）。
+> 4. 确认 `.tools\godot\` 下有一个 `Godot*win64.exe`（或已安装 Godot 4.x，且脚本能打印出它的路径）。
 >
 > 如果 `run_game_debug.bat` 只显示 `Exit code: -1073741819`（即 `0xC0000005`）且没有引擎版本行，这是 Godot 4.3 在 `user://` 目录不可写时触发的崩溃，不是游戏脚本的问题。启动脚本已经把 `APPDATA` 重定向到项目内 `.godot_userdata\`，通常可直接解决；若该目录仍无法创建，脚本会回退到 `%TEMP%\GoodMorningUserData`。
 
