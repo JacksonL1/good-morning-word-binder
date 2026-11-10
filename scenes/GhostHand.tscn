@@ -1,0 +1,42 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://core/ghost_hand.gd" id="1_ghost"]
+[ext_resource type="Texture2D" path="res://assets/ui/ghost_hand.png" id="2_hand"]
+
+[node name="GhostHand" type="Control"]
+visible = false
+custom_minimum_size = Vector2(220, 250)
+offset_right = 220.0
+offset_bottom = 250.0
+mouse_filter = 2
+script = ExtResource("1_ghost")
+
+[node name="Bubble" type="Panel" parent="."]
+offset_left = 18.0
+offset_top = 0.0
+offset_right = 202.0
+offset_bottom = 54.0
+mouse_filter = 2
+
+[node name="Hint" type="Label" parent="."]
+offset_left = 24.0
+offset_top = 6.0
+offset_right = 196.0
+offset_bottom = 48.0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.29, 0.29, 0.42, 1)
+theme_override_font_sizes/font_size = 22
+text = "拖这张卡片"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Hand" type="TextureRect" parent="."]
+offset_left = 38.0
+offset_top = 64.0
+offset_right = 182.0
+offset_bottom = 240.0
+mouse_filter = 2
+texture = ExtResource("2_hand")
+expand_mode = 1
+stretch_mode = 5

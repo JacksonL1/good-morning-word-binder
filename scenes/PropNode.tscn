@@ -1,0 +1,15 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://core/prop_node.gd" id="1_prop"]
+[ext_resource type="Script" path="res://core/base_prop.gd" id="2_drop"]
+
+[node name="PropNode" type="Node2D"]
+script = ExtResource("1_prop")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+
+[node name="DropZone" type="Control" parent="."]
+offset_right = 100.0
+offset_bottom = 100.0
+mouse_filter = 0
+script = ExtResource("2_drop")

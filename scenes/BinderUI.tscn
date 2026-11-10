@@ -1,0 +1,47 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://core/binder_ui.gd" id="1_binder"]
+[ext_resource type="Texture2D" path="res://assets/ui/panel.png" id="2_panel"]
+
+[node name="Binder" type="CanvasLayer"]
+layer = 2
+script = ExtResource("1_binder")
+
+[node name="Root" type="Control" parent="."]
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_top = -180.0
+grow_horizontal = 2
+grow_vertical = 0
+mouse_filter = 2
+
+[node name="Board" type="NinePatchRect" parent="Root"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("2_panel")
+patch_margin_left = 60
+patch_margin_top = 52
+patch_margin_right = 60
+patch_margin_bottom = 52
+mouse_filter = 2
+
+[node name="Scroll" type="ScrollContainer" parent="Root"]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 26.0
+offset_top = 20.0
+offset_right = -26.0
+offset_bottom = -14.0
+grow_horizontal = 2
+grow_vertical = 2
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 0
+
+[node name="CardsBox" type="HBoxContainer" parent="Root/Scroll"]
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_constants/separation = 26
+alignment = 1

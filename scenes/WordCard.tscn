@@ -1,0 +1,68 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://core/word_card.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://assets/ui/card.png" id="2_card"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_shadow"]
+bg_color = Color(0.89, 0.78, 0.64, 0.55)
+corner_radius_top_left = 36
+corner_radius_top_right = 36
+corner_radius_bottom_right = 36
+corner_radius_bottom_left = 36
+corner_detail = 8
+anti_aliasing = true
+
+[node name="WordCard" type="Control"]
+custom_minimum_size = Vector2(190, 142)
+offset_right = 190.0
+offset_bottom = 142.0
+mouse_filter = 0
+script = ExtResource("1_script")
+
+[node name="Shadow" type="Panel" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 5.0
+offset_top = 7.0
+offset_right = 5.0
+offset_bottom = 7.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_shadow")
+
+[node name="CardBg" type="NinePatchRect" parent="."]
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+texture = ExtResource("2_card")
+patch_margin_left = 44
+patch_margin_top = 44
+patch_margin_right = 44
+patch_margin_bottom = 44
+
+[node name="Icon" type="TextureRect" parent="."]
+offset_left = 58.0
+offset_top = 8.0
+offset_right = 132.0
+offset_bottom = 82.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="Word" type="Label" parent="."]
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 6.0
+offset_top = -58.0
+offset_right = -6.0
+offset_bottom = -8.0
+grow_vertical = 0
+mouse_filter = 2
+theme_override_colors/font_color = Color(0.29, 0.29, 0.42, 1)
+theme_override_font_sizes/font_size = 30
+text = "Word"
+horizontal_alignment = 1
+vertical_alignment = 1

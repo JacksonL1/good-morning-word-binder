@@ -1,0 +1,20 @@
+# Godot import cache / editor data
+.godot/
+.godot_appdata/
+.godot_userdata/
+
+# Local toolchain (Godot binary, downloaded wheels, QA scripts)
+.tools/
+
+# Generated QA captures and logs
+shots/
+*.log
+*.tmp
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+Thumbs.db
+.DS_Store

@@ -1,0 +1,39 @@
+{
+  "title": "Morning Checklist",
+  "subtitle": "出门前检查清单",
+  "intro_vo": "res://assets/audio/vo/vo_act6_checklist.mp3",
+  "finish_vo": "res://assets/audio/vo/vo_act6_finish.mp3",
+  "timeout_vo": "res://assets/audio/vo/vo_timeout_act6.mp3",
+  "badges": [
+    {
+      "label": "Water",
+      "cn": "喝水",
+      "icon": "res://assets/props/icon_drink.png",
+      "vo": "res://assets/audio/vo/vo_act6_badge_0.mp3"
+    },
+    {
+      "label": "Teeth",
+      "cn": "刷牙",
+      "icon": "res://assets/props/icon_brush.png",
+      "vo": "res://assets/audio/vo/vo_act6_badge_1.mp3"
+    },
+    {
+      "label": "Face",
+      "cn": "洗脸",
+      "icon": "res://assets/props/icon_wash.png",
+      "vo": "res://assets/audio/vo/vo_act6_badge_2.mp3"
+    },
+    {
+      "label": "Shirt",
+      "cn": "穿衣",
+      "icon": "res://assets/props/icon_shirt.png",
+      "vo": "res://assets/audio/vo/vo_act6_badge_3.mp3"
+    },
+    {
+      "label": "Shoes",
+      "cn": "穿鞋",
+      "icon": "res://assets/props/icon_shoes.png",
+      "vo": "res://assets/audio/vo/vo_act6_badge_4.mp3"
+    }
+  ]
+}
