@@ -3,7 +3,7 @@ extends CanvasLayer
 
 ## The persistent bottom "Word Binder".
 ##
-## Cards are rebuilt from story.json on every level. Their order is shuffled
+## Cards are rebuilt from data/levels/morning_routine.json on every level. Their order is shuffled
 ## with a deterministic seed so the correct card is not always in the same
 ## place (otherwise children quickly learn position instead of the word).
 

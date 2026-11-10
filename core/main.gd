@@ -1,18 +1,19 @@
 extends Control
 
-## The director. Owns the level flow, the zero-frustration FSM and all
-## feedback (VO, chimes, stars, confetti).
+## The director.
 ##
-## Data flow:
-##   story.json -> StoryData -> Main -> BinderUI / PropNode
-##   WordCard drag payload -> BaseProp -> matched/mismatched -> Main
+## Content model (all data driven):
+##   data/game.json            -> list of level files
+##   data/rooms.json           -> backgrounds + ambience per room
+##   data/levels/<level>.json  -> ordered `steps`
 ##
-## Nothing here knows about specific words: adding a level to story.json is
-## enough to extend the game.
+## Step types: drag / pair / cutscene / checklist. Adding a level, a room, a new
+## step or an inserted video between steps needs no code change.
 
-const STORY_PATH := "res://data/story.json"
 const DONE_HOLD := 2.2
 const IDLE_HINT_DELAY := 10.0
+const ROOM_FADE := 0.32
+const PROP_SCENE := preload("res://scenes/PropNode.tscn")
 
 const VO_SUCCESS := "res://assets/audio/vo/success.mp3"
 const VO_TRY_AGAIN := "res://assets/audio/vo/try_again.mp3"
@@ -24,13 +25,15 @@ const SOUND_ON_TEXTURE := "res://assets/ui/sound_on.png"
 const SOUND_OFF_TEXTURE := "res://assets/ui/sound_off.png"
 
 @onready var background: TextureRect = $Background
-@onready var prop: PropNode = %Prop
+@onready var props_root: Node2D = %Props
 @onready var character: Character = %Character
 @onready var binder: BinderUI = %Binder
 @onready var ghost: GhostHand = %GhostHand
 @onready var idle_timer: Timer = $IdleTimer
 @onready var fx: Node2D = %FX
 @onready var fx_top: Node2D = %FXTop
+@onready var cutscene: Cutscene = %Cutscene
+@onready var checklist: Checklist = %Checklist
 
 @onready var title_pill: Panel = %TitlePill
 @onready var title_label: Label = %TitleLabel
@@ -48,17 +51,22 @@ const SOUND_OFF_TEXTURE := "res://assets/ui/sound_off.png"
 @onready var finale_overlay: Control = %FinaleOverlay
 @onready var finale_card: Panel = %FinaleCard
 @onready var replay_button: Button = %ReplayButton
-@onready var checklist: Checklist = %Checklist
 
 @onready var transition: ColorRect = %Transition
 
+var rooms: Dictionary = {}
 var levels: Array = []
 var level_index := 0
-var current_level: Dictionary = {}
+var steps: Array = []
+var step_index := 0
+var current_step: Dictionary = {}
+var current_room := ""
 var game_started := false
 var busy := false
 
-var _level_token := 0
+var _props: Array[PropNode] = []
+var _solved := 0
+var _token := 0
 var _stars: Array[TextureRect] = []
 var _transition_tween: Tween
 var _autopilot: Node = null
@@ -68,7 +76,9 @@ var _sound_off: Texture2D = null
 
 
 func _ready() -> void:
-	levels = StoryData.load_levels(STORY_PATH)
+	var data := LevelData.load_all()
+	levels = data.get("levels", [])
+	rooms = data.get("rooms", {})
 	_star_texture = load(STAR_TEXTURE_PATH) if ResourceLoader.exists(STAR_TEXTURE_PATH) else null
 	_sound_on = load(SOUND_ON_TEXTURE) if ResourceLoader.exists(SOUND_ON_TEXTURE) else null
 	_sound_off = load(SOUND_OFF_TEXTURE) if ResourceLoader.exists(SOUND_OFF_TEXTURE) else null
@@ -82,12 +92,13 @@ func _ready() -> void:
 	finale_overlay.visible = false
 	transition.visible = false
 	start_overlay.visible = true
+	cutscene.visible = false
 	ghost.hide_hand()
 
 	if levels.is_empty():
 		title_label.text = "缺少剧本"
 		title_en.text = "Story not found"
-		hint_label.text = "请检查 data/story.json"
+		hint_label.text = "请检查 data/game.json"
 		push_error("No levels loaded; game cannot start.")
 		return
 
@@ -101,13 +112,11 @@ func _wire_signals() -> void:
 	binder.card_pressed.connect(_on_card_pressed)
 	binder.drag_started.connect(_on_card_drag_started)
 	binder.drag_finished.connect(_on_activity)
-	prop.drop_zone.matched.connect(_on_prop_matched)
-	prop.drop_zone.mismatched.connect(_on_prop_mismatched)
-	prop.drop_zone.tapped.connect(_on_prop_tapped)
 	play_button.pressed.connect(_on_play_pressed)
 	replay_button.pressed.connect(_on_replay_pressed)
 	sound_button.pressed.connect(_on_sound_pressed)
 	checklist.completed.connect(_on_checklist_completed)
+	cutscene.finished.connect(_on_cutscene_finished)
 
 
 func _apply_styles() -> void:
@@ -146,10 +155,11 @@ func _build_progress() -> void:
 	_stars.clear()
 	if _star_texture == null:
 		return
-	for i in levels.size():
+	var total := _total_steps()
+	for i in total:
 		var star := TextureRect.new()
 		star.texture = _star_texture
-		star.custom_minimum_size = Vector2(34, 34)
+		star.custom_minimum_size = Vector2(30, 30)
 		star.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 		star.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 		star.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -160,27 +170,35 @@ func _build_progress() -> void:
 	_update_stars(0)
 
 
+func _total_steps() -> int:
+	var total := 0
+	for level in levels:
+		total += (level.get("steps", []) as Array).size()
+	return total
+
+
 func _build_start_icons() -> void:
 	for child in start_icons.get_children():
 		child.queue_free()
 	var seen: Dictionary = {}
 	for level in levels:
-		var required := String(level.get("req_card", ""))
-		for card in level.get("cards", []):
-			var card_id := String(card.get("id", ""))
-			if card_id != required or seen.has(card_id):
-				continue
-			if not ResourceLoader.exists(String(card.get("img", ""))):
-				continue
-			seen[card_id] = true
-			var icon := TextureRect.new()
-			icon.texture = load(String(card["img"]))
-			icon.custom_minimum_size = Vector2(64, 64)
-			icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-			icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			start_icons.add_child(icon)
+		for step in level.get("steps", []):
+			var required := String(step.get("req_card", ""))
+			for card in step.get("cards", []):
+				var card_id := String(card.get("id", ""))
+				if not required.is_empty() and card_id != required:
+					continue
+				if seen.has(card_id) or not ResourceLoader.exists(String(card.get("img", ""))):
+					continue
+				seen[card_id] = true
+				var icon := TextureRect.new()
+				icon.texture = load(String(card["img"]))
+				icon.custom_minimum_size = Vector2(56, 56)
+				icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+				icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+				icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+				icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+				start_icons.add_child(icon)
 
 
 # ------------------------------------------------------------------ flow ----
@@ -188,58 +206,194 @@ func start_game() -> void:
 	start_overlay.visible = false
 	finale_overlay.visible = false
 	checklist.close()
+	cutscene.visible = false
 	game_started = true
 	busy = false
 	_clear_fx()
+	_clear_props()
 	_update_stars(0)
 	_load_level(0)
 
 
 func _load_level(index: int) -> void:
 	if index < 0 or index >= levels.size():
+		_show_finale()
 		return
-	_level_token += 1
 	level_index = index
+	steps = levels[index].get("steps", [])
+	current_room = ""
+	step_index = 0
+	_title_level(levels[index])
+	_goto_step(0)
+
+
+func _title_level(level: Dictionary) -> void:
+	if title_label:
+		title_label.text = String(level.get("title_cn", level.get("title", "")))
+
+
+func _goto_step(index: int) -> void:
+	_token += 1
+	if index >= steps.size():
+		_finish_level()
+		return
+	step_index = index
+	current_step = steps[index]
 	busy = false
-	current_level = levels[index]
-	ghost.hide_hand()
 	idle_timer.stop()
+	ghost.hide_hand()
+	_clear_props()
+	_solved = 0
 
-	var bg_path := String(current_level.get("bg_img", ""))
-	if ResourceLoader.exists(bg_path):
-		background.texture = load(bg_path)
+	var room_id := String(current_step.get("room", ""))
+	if room_id != "" and room_id != current_room:
+		current_room = room_id
+		_apply_room(room_id)
 
-	if binder.visible == false:
-		binder.visible = true
-	prop.setup(current_level)
-	character.setup(current_level)
-	binder.show_level(current_level)
+	title_label.text = String(current_step.get("title", levels[level_index].get("title", "")))
+	title_en.text = String(current_step.get("title_en", ""))
+	_update_stars(_global_step_offset() + index)
+
+	var kind := String(current_step.get("type", "drag"))
+	if kind == "cutscene":
+		_run_cutscene()
+	elif kind == "checklist":
+		_run_checklist()
+	else:
+		_run_drag()
+
+
+func _global_step_offset() -> int:
+	var offset := 0
+	for i in level_index:
+		offset += (levels[i].get("steps", []) as Array).size()
+	return offset
+
+
+func _apply_room(room_id: String) -> void:
+	var room: Dictionary = rooms.get(room_id, {})
+	var bg_path := String(room.get("bg", ""))
+	if bg_path.is_empty() or not ResourceLoader.exists(bg_path):
+		return
+	var tex: Texture2D = load(bg_path)
+	background.texture = tex
+	Audio.play_ambience(String(room.get("ambience", "")))
+	var label := String(room.get("name", ""))
+	if not label.is_empty():
+		hint_label.text = "📍 " + label
+
+
+# ------------------------------------------------------------- step: drag ---
+func _run_drag() -> void:
+	binder.visible = true
+	hint_label.text = String(current_step.get("hint", ""))
+	character.setup(current_step)
+	character.visible = true
+
+	var kind := String(current_step.get("type", "drag"))
+	if kind == "pair":
+		var list: Array = current_step.get("props", [])
+		for entry in list:
+			_spawn_prop(entry)
+	else:
+		_spawn_prop(current_step.get("prop", {}))
+
+	binder.show_level(current_step)
 	binder.set_locked(false)
-
-	Audio.play_ambience(String(current_level.get("ambience", "")))
-
-	title_label.text = String(current_level.get("title", ""))
-	title_en.text = String(current_level.get("title_en", ""))
-	hint_label.text = String(current_level.get("hint", ""))
-	_update_stars(level_index)
 	_flash_transition()
 	_reset_idle()
-
-	var audio: Dictionary = current_level.get("audio", {})
-	_play_intro_later(String(audio.get("intro", "")), _level_token)
+	_play_intro_later(String((current_step.get("audio", {}) as Dictionary).get("intro", "")))
 
 
-func _play_intro_later(path: String, token: int) -> void:
+func _spawn_prop(cfg: Dictionary) -> void:
+	var node := PROP_SCENE.instantiate() as PropNode
+	props_root.add_child(node)
+	node.setup_prop(cfg, String(cfg.get("req_card", current_step.get("req_card", ""))))
+	node.drop_zone.matched.connect(_on_prop_matched)
+	node.drop_zone.mismatched.connect(_on_prop_mismatched)
+	node.drop_zone.tapped.connect(_on_prop_tapped)
+	_props.append(node)
+
+
+func _clear_props() -> void:
+	for node in _props:
+		if is_instance_valid(node):
+			node.queue_free()
+	_props.clear()
+
+
+func _play_intro_later(path: String) -> void:
 	if path.is_empty():
 		return
+	var token := _token
 	await get_tree().create_timer(0.55).timeout
-	if token == _level_token and game_started and not busy:
+	if token == _token and game_started and not busy:
 		Audio.play_vo(path)
+
+
+# --------------------------------------------------------- step: cutscene ---
+func _run_cutscene() -> void:
+	binder.visible = false
+	busy = true
+	idle_timer.stop()
+	ghost.hide_hand()
+	character.visible = true
+	character.setup(current_step)
+	hint_label.text = ""
+	cutscene.play(current_step, character)
+
+
+func _on_cutscene_finished() -> void:
+	if not game_started:
+		return
+	busy = false
+	_goto_step(step_index + 1)
+
+
+# -------------------------------------------------------- step: checklist ---
+func _run_checklist() -> void:
+	binder.visible = false
+	busy = true
+	idle_timer.stop()
+	ghost.hide_hand()
+	character.play_happy()
+	checklist.open()
+
+
+func _on_checklist_completed() -> void:
+	_finish_level()
+
+
+func _finish_level() -> void:
+	busy = true
+	idle_timer.stop()
+	ghost.hide_hand()
+	if level_index + 1 < levels.size():
+		_load_level(level_index + 1)
+	else:
+		_show_finale()
+
+
+# ------------------------------------------------------------ interaction ---
+func _required_card() -> String:
+	for node in _props:
+		if is_instance_valid(node) and not node.drop_zone.solved:
+			return node.drop_zone.required_card
+	return String(current_step.get("req_card", ""))
+
+
+func _all_solved() -> bool:
+	if _props.is_empty():
+		return false
+	for node in _props:
+		if is_instance_valid(node) and not node.drop_zone.solved:
+			return false
+	return true
 
 
 func _reset_idle() -> void:
 	ghost.hide_hand()
-	if game_started and not busy and not levels.is_empty():
+	if game_started and not busy and not _props.is_empty():
 		idle_timer.start(IDLE_HINT_DELAY)
 	else:
 		idle_timer.stop()
@@ -248,14 +402,13 @@ func _reset_idle() -> void:
 func _on_idle_timeout() -> void:
 	if not game_started or busy:
 		return
-	var required := String(current_level.get("req_card", ""))
+	var required := _required_card()
 	var card := binder.get_card(required)
 	if card == null:
-		# Cards may still be fading in; try again shortly.
 		idle_timer.start(1.0)
 		return
 	ghost.show_hint(card)
-	var audio: Dictionary = current_level.get("audio", {})
+	var audio: Dictionary = current_step.get("audio", {})
 	Audio.play_vo(String(audio.get("timeout", VO_HINT)))
 	Audio.play_sfx("tap", -10.0)
 
@@ -269,11 +422,11 @@ func _on_replay_pressed() -> void:
 	Audio.play_sfx("tap")
 	finale_overlay.visible = false
 	checklist.close()
+	cutscene.visible = false
 	_clear_fx()
 	start_game()
 
 
-# ------------------------------------------------------------- interaction --
 func _on_card_pressed(_card_id: String) -> void:
 	if not game_started or busy:
 		return
@@ -295,7 +448,7 @@ func _on_activity(_card_id: String = "") -> void:
 func _on_prop_tapped() -> void:
 	if not game_started or busy:
 		return
-	var card := binder.get_card(String(current_level.get("req_card", "")))
+	var card := binder.get_card(_required_card())
 	if card:
 		Audio.play_vo(card.vo_path)
 	_reset_idle()
@@ -304,80 +457,59 @@ func _on_prop_tapped() -> void:
 func _on_prop_matched(_card_id: String) -> void:
 	if not game_started or busy:
 		return
+	_spawn_stars(character.global_position + Vector2(0, -110))
+	if not _all_solved():
+		Audio.play_sfx("tap")
+		_reset_idle()
+		hint_label.text = "再找一找！One more!"
+		return
+
 	busy = true
 	idle_timer.stop()
 	ghost.hide_hand()
 	binder.set_locked(true)
 
-	_update_stars(level_index + 1)
+	_update_stars(_global_step_offset() + step_index + 1)
 	hint_label.text = "太棒了！Great job!"
 
-	var token := _level_token
-	var audio: Dictionary = current_level.get("audio", {})
+	var token := _token
+	var audio: Dictionary = current_step.get("audio", {})
 	await character.play_action(audio)
-	if not is_inside_tree() or token != _level_token:
+	if not is_inside_tree() or token != _token:
 		return
 
 	Audio.play_sfx("success")
 	var done_path := String(audio.get("done", VO_SUCCESS))
 	Audio.play_vo(done_path if not done_path.is_empty() else VO_SUCCESS)
-	_spawn_stars(character.global_position + Vector2(0, -110))
 
 	await get_tree().create_timer(DONE_HOLD).timeout
-	if not is_inside_tree() or token != _level_token:
+	if not is_inside_tree() or token != _token:
 		return
-	if level_index + 1 < levels.size():
-		_load_level(level_index + 1)
-	else:
-		_open_checklist()
+	_goto_step(step_index + 1)
 
 
 func _on_prop_mismatched(_card_id: String) -> void:
 	if not game_started or busy:
 		return
-	var audio: Dictionary = current_level.get("audio", {})
+	var audio: Dictionary = current_step.get("audio", {})
 	Audio.play_sfx("error")
 	var wrong := String(audio.get("wrong", VO_TRY_AGAIN))
 	Audio.play_vo(wrong if not wrong.is_empty() else VO_TRY_AGAIN)
 	character.play_wince()
 	hint_label.text = "再试一次吧！Try again!"
 	_reset_idle()
-	_restore_hint_later(2.4)
 
 
-func _restore_hint_later(seconds: float) -> void:
-	var token := _level_token
-	await get_tree().create_timer(seconds).timeout
-	if not is_inside_tree() or token != _level_token or busy:
-		return
-	hint_label.text = String(current_level.get("hint", ""))
-
-
-# ---------------------------------------------------------------- finale -----
-func _open_checklist() -> void:
+# ---------------------------------------------------------------- finale ----
+func _show_finale() -> void:
 	busy = true
+	_token += 1
 	idle_timer.stop()
 	ghost.hide_hand()
-	binder.set_locked(true)
-	character.play_happy()
-	checklist.open()
-
-
-func _on_checklist_completed() -> void:
-	_show_finale(false)
-
-
-func _show_finale(with_vo: bool = true) -> void:
-	busy = true
-	_level_token += 1
-	idle_timer.stop()
-	ghost.hide_hand()
-	binder.set_locked(true)
-	_update_stars(levels.size())
+	binder.visible = false
 	Audio.stop_ambience()
-	if with_vo:
-		Audio.play_sfx("finish")
-		Audio.play_vo(VO_FINISH)
+	Audio.play_sfx("finish")
+	Audio.play_vo(VO_FINISH)
 	finale_overlay.visible = true
 	finale_overlay.modulate.a = 0.0
 	var tween := create_tween()
@@ -391,12 +523,6 @@ func _update_stars(filled: int) -> void:
 		var star := _stars[i]
 		var on := i < filled
 		star.modulate = Color.WHITE if on else Color(0.55, 0.50, 0.65, 0.25)
-		if on:
-			star.pivot_offset = star.size * 0.5
-			star.scale = Vector2(1.2, 1.2)
-			var tween := star.create_tween()
-			tween.tween_property(star, "scale", Vector2.ONE, 0.3) \
-					.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 
 
 func _flash_transition() -> void:
@@ -405,7 +531,7 @@ func _flash_transition() -> void:
 	if _transition_tween and _transition_tween.is_valid():
 		_transition_tween.kill()
 	_transition_tween = create_tween()
-	_transition_tween.tween_property(transition, "color:a", 0.0, 0.45) \
+	_transition_tween.tween_property(transition, "color:a", 0.0, ROOM_FADE) \
 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
 	_transition_tween.tween_callback(func() -> void: transition.visible = false)
 
@@ -425,37 +551,27 @@ func refresh_sound_icon() -> void:
 	sound_button.modulate = Color(1, 1, 1, 0.6) if Audio.muted else Color.WHITE
 
 
-## Make sure the game is actually visible when launched from a .bat file:
-## Windows may put a newly spawned window behind the console/browser.
 func _present_window() -> void:
 	if DisplayServer.get_name() == "headless":
 		return
 	var window := get_window()
 	if window == null:
 		return
-	_fit_window_to_screen(window)
-	# Pop above the launcher console / browser for a moment, then release the
-	# top-most flag so the window behaves normally afterwards.
+	var usable := DisplayServer.screen_get_usable_rect(window.current_screen)
+	if usable.size.x > 0 and usable.size.y > 0:
+		var design := Vector2(1280, 720)
+		var factor := minf(1.0, minf(
+				float(usable.size.x) * 0.94 / design.x,
+				float(usable.size.y) * 0.90 / design.y))
+		if factor < 0.995:
+			window.size = Vector2i(int(design.x * factor), int(design.y * factor))
+		window.position = usable.position + (usable.size - window.size) / 2
 	window.always_on_top = true
 	window.grab_focus()
 	await get_tree().create_timer(2.0).timeout
 	if is_instance_valid(window):
 		window.always_on_top = false
 		window.grab_focus()
-
-
-func _fit_window_to_screen(window: Window) -> void:
-	var usable := DisplayServer.screen_get_usable_rect(window.current_screen)
-	if usable.size.x <= 0 or usable.size.y <= 0:
-		return
-	var design := Vector2(1280, 720)
-	var factor := minf(1.0, minf(
-			float(usable.size.x) * 0.94 / design.x,
-			float(usable.size.y) * 0.90 / design.y))
-	if factor < 0.995:
-		window.size = Vector2i(int(design.x * factor), int(design.y * factor))
-	# Always re-center so a window restored on a disconnected monitor is visible.
-	window.position = usable.position + (usable.size - window.size) / 2
 
 
 # ------------------------------------------------------------------ FX -------
@@ -465,7 +581,7 @@ func _spawn_stars(at: Vector2) -> void:
 	var particles := CPUParticles2D.new()
 	particles.texture = _star_texture
 	particles.position = at
-	particles.amount = 22
+	particles.amount = 20
 	particles.lifetime = 1.2
 	particles.one_shot = true
 	particles.explosiveness = 0.92
@@ -474,10 +590,10 @@ func _spawn_stars(at: Vector2) -> void:
 	particles.direction = Vector2(0, -1)
 	particles.spread = 180.0
 	particles.initial_velocity_min = 110.0
-	particles.initial_velocity_max = 330.0
+	particles.initial_velocity_max = 320.0
 	particles.gravity = Vector2(0, 430)
-	particles.scale_amount_min = 0.18
-	particles.scale_amount_max = 0.45
+	particles.scale_amount_min = 0.16
+	particles.scale_amount_max = 0.42
 	particles.color = Color(1.0, 0.86, 0.40, 1.0)
 	particles.z_index = 5
 	fx.add_child(particles)
@@ -551,15 +667,30 @@ func _maybe_start_autopilot() -> void:
 		_autopilot.setup(self)
 
 
-## Test hook: behave exactly like a completed drop on the current prop.
+## Test hook: behave exactly like a completed drop on the matching prop.
 func debug_drop(card_id: String) -> bool:
 	if not game_started:
 		start_game()
-	var data := {"type": "word_card", "card_id": card_id}
-	if not prop.drop_zone._can_drop_data(Vector2.ZERO, data):
-		return false
-	prop.drop_zone._drop_data(Vector2.ZERO, data)
-	return true
+	for node in _props:
+		if not is_instance_valid(node) or node.drop_zone.solved:
+			continue
+		if node.drop_zone.required_card != card_id:
+			continue
+		var data := {"type": "word_card", "card_id": card_id}
+		if not node.drop_zone._can_drop_data(Vector2.ZERO, data):
+			return false
+		node.drop_zone._drop_data(Vector2.ZERO, data)
+		return true
+	return false
+
+
+## Test hook: solve every remaining prop of the current step.
+func debug_solve_step() -> bool:
+	var solved := false
+	for node in _props:
+		if is_instance_valid(node) and not node.drop_zone.solved:
+			solved = debug_drop(node.drop_zone.required_card) or solved
+	return solved
 
 
 ## Test hook: force the zero-frustration hint immediately.

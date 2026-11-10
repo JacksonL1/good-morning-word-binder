@@ -1,0 +1,242 @@
+{
+  "id": "morning_routine",
+  "title": "Good Morning!",
+  "title_cn": "早晨的七件事",
+  "steps": [
+    {
+      "id": "wake",
+      "type": "drag",
+      "room": "bedroom",
+      "title": "起床",
+      "title_en": "Wake up",
+      "hint": "把 Wake up 卡片拖到床上",
+      "prop": {"img": "res://assets/props/prop_bed.png", "pos": [640, 340], "scale": 1.0},
+      "req_card": "card_wake",
+      "action": "wake",
+      "char": {"pos": [930, 505], "scale": 0.62, "start_pose": "lying",
+               "start_pos": [640, 330], "start_scale": 0.62},
+      "audio": {
+        "intro": "res://assets/audio/vo/vo_act1_intro.mp3",
+        "action": "res://assets/audio/vo/vo_act1_action.mp3",
+        "done": "res://assets/audio/vo/vo_act1_done.mp3",
+        "timeout": "res://assets/audio/vo/vo_timeout_act1.mp3"
+      },
+      "cards": [
+        {"id": "card_wake", "text": "Wake up", "img": "res://assets/props/icon_wake.png", "vo": "res://assets/audio/vo/card_wake.mp3"},
+        {"id": "card_drink", "text": "Drink", "img": "res://assets/props/icon_drink.png", "vo": "res://assets/audio/vo/card_drink.mp3"},
+        {"id": "card_shirt", "text": "Shirt", "img": "res://assets/props/icon_shirt.png", "vo": "res://assets/audio/vo/card_shirt.mp3"}
+      ]
+    },
+    {
+      "id": "goto_living",
+      "type": "cutscene",
+      "room": "living",
+      "title": "去客厅",
+      "title_en": "To the living room",
+      "vo": "res://assets/audio/vo/vo_goto_living.mp3",
+      "caption": "Let's go to the living room!",
+      "duration": 2.4,
+      "poses": [{"pose": "stand", "pos": [420, 505], "scale": 0.62},
+                {"pose": "stand", "pos": [880, 505], "scale": 0.62}]
+    },
+    {
+      "id": "drink",
+      "type": "drag",
+      "room": "living",
+      "title": "喝水",
+      "title_en": "Drink",
+      "hint": "把 Drink 卡片拖到水杯上",
+      "prop": {"img": "res://assets/props/prop_cup.png", "pos": [640, 340], "scale": 0.95},
+      "req_card": "card_drink",
+      "action": "drink",
+      "char": {"pos": [930, 505], "scale": 0.62},
+      "audio": {
+        "intro": "res://assets/audio/vo/vo_act1_5_intro.mp3",
+        "action": "res://assets/audio/vo/vo_act1_5_action.mp3",
+        "sip": "res://assets/audio/vo/vo_act1_5_sip.mp3",
+        "done": "res://assets/audio/vo/vo_act1_5_done.mp3",
+        "timeout": "res://assets/audio/vo/vo_timeout_act1_5.mp3"
+      },
+      "cards": [
+        {"id": "card_drink", "text": "Drink", "img": "res://assets/props/icon_drink.png", "vo": "res://assets/audio/vo/card_drink.mp3"},
+        {"id": "card_wash", "text": "Wash", "img": "res://assets/props/icon_wash.png", "vo": "res://assets/audio/vo/card_wash.mp3"},
+        {"id": "card_pants", "text": "Pants", "img": "res://assets/props/icon_pants.png", "vo": "res://assets/audio/vo/card_pants.mp3"}
+      ]
+    },
+    {
+      "id": "goto_bathroom",
+      "type": "cutscene",
+      "room": "bathroom",
+      "title": "去洗手间",
+      "title_en": "To the bathroom",
+      "vo": "res://assets/audio/vo/vo_goto_bathroom.mp3",
+      "caption": "Off to the bathroom!",
+      "duration": 2.4,
+      "poses": [{"pose": "stand", "pos": [880, 505], "scale": 0.62},
+                {"pose": "stand", "pos": [420, 505], "scale": 0.62}]
+    },
+    {
+      "id": "brush",
+      "type": "drag",
+      "room": "bathroom",
+      "title": "刷牙",
+      "title_en": "Brush",
+      "hint": "把 Brush 卡片拖到牙刷上",
+      "prop": {"img": "res://assets/props/prop_brush.png", "pos": [640, 340], "scale": 1.12},
+      "req_card": "card_brush",
+      "action": "brush",
+      "char": {"pos": [930, 505], "scale": 0.62},
+      "audio": {
+        "intro": "res://assets/audio/vo/vo_act2_intro.mp3",
+        "left": "res://assets/audio/vo/vo_act2_brush_l.mp3",
+        "right": "res://assets/audio/vo/vo_act2_brush_r.mp3",
+        "all": "res://assets/audio/vo/vo_act2_brush_all.mp3",
+        "done": "res://assets/audio/vo/vo_act2_done.mp3",
+        "timeout": "res://assets/audio/vo/vo_timeout_act2.mp3"
+      },
+      "cards": [
+        {"id": "card_brush", "text": "Brush", "img": "res://assets/props/icon_brush.png", "vo": "res://assets/audio/vo/card_brush.mp3"},
+        {"id": "card_wake", "text": "Wake up", "img": "res://assets/props/icon_wake.png", "vo": "res://assets/audio/vo/card_wake.mp3"},
+        {"id": "card_coat", "text": "Coat", "img": "res://assets/props/icon_coat.png", "vo": "res://assets/audio/vo/card_coat.mp3"}
+      ]
+    },
+    {
+      "id": "brush_video",
+      "type": "cutscene",
+      "room": "bathroom",
+      "title": "看看怎么刷",
+      "title_en": "This is how we brush",
+      "vo": "res://assets/audio/vo/vo_brush_video.mp3",
+      "caption": "Up and down, round and round!",
+      "duration": 4.0,
+      "character_action": "brush",
+      "video": "res://assets/video/brush_teeth.mp4",
+      "skip_after": 1.2
+    },
+    {
+      "id": "wash",
+      "type": "drag",
+      "room": "bathroom",
+      "title": "洗脸",
+      "title_en": "Wash",
+      "hint": "把 Wash 卡片拖到毛巾上",
+      "prop": {"img": "res://assets/props/prop_towel.png", "pos": [640, 340], "scale": 1.0},
+      "req_card": "card_wash",
+      "action": "wash",
+      "char": {"pos": [930, 505], "scale": 0.62},
+      "audio": {
+        "intro": "res://assets/audio/vo/vo_act3_intro.mp3",
+        "loop": "res://assets/audio/vo/vo_act3_wash_loop.mp3",
+        "done": "res://assets/audio/vo/vo_act3_done.mp3",
+        "timeout": "res://assets/audio/vo/vo_timeout_act3.mp3"
+      },
+      "cards": [
+        {"id": "card_wash", "text": "Wash", "img": "res://assets/props/icon_wash.png", "vo": "res://assets/audio/vo/card_wash.mp3"},
+        {"id": "card_brush", "text": "Brush", "img": "res://assets/props/icon_brush.png", "vo": "res://assets/audio/vo/card_brush.mp3"},
+        {"id": "card_drink", "text": "Drink", "img": "res://assets/props/icon_drink.png", "vo": "res://assets/audio/vo/card_drink.mp3"}
+      ]
+    },
+    {
+      "id": "goto_bedroom",
+      "type": "cutscene",
+      "room": "bedroom",
+      "title": "回卧室",
+      "title_en": "Back to the bedroom",
+      "vo": "res://assets/audio/vo/vo_goto_bedroom.mp3",
+      "caption": "Back to the bedroom!",
+      "duration": 2.4,
+      "poses": [{"pose": "stand", "pos": [420, 505], "scale": 0.62},
+                {"pose": "stand", "pos": [900, 505], "scale": 0.62}]
+    },
+    {
+      "id": "shirt",
+      "type": "drag",
+      "room": "bedroom",
+      "title": "穿衣",
+      "title_en": "Shirt",
+      "hint": "把 Shirt 卡片拖到衣服上",
+      "prop": {"img": "res://assets/props/prop_shirt.png", "pos": [640, 340], "scale": 1.0},
+      "req_card": "card_shirt",
+      "action": "shirt",
+      "char": {"pos": [930, 505], "scale": 0.62},
+      "audio": {
+        "intro": "res://assets/audio/vo/vo_act4_intro.mp3",
+        "wrong": "res://assets/audio/vo/vo_act4_wrong.mp3",
+        "done": "res://assets/audio/vo/vo_act4_done.mp3",
+        "timeout": "res://assets/audio/vo/vo_timeout_act4.mp3"
+      },
+      "cards": [
+        {"id": "card_shirt", "text": "Shirt", "img": "res://assets/props/icon_shirt.png", "vo": "res://assets/audio/vo/card_shirt.mp3"},
+        {"id": "card_coat", "text": "Coat", "img": "res://assets/props/icon_coat.png", "vo": "res://assets/audio/vo/card_coat.mp3"},
+        {"id": "card_shoes", "text": "Shoes", "img": "res://assets/props/icon_shoes.png", "vo": "res://assets/audio/vo/card_shoes.mp3"}
+      ]
+    },
+    {
+      "id": "pants",
+      "type": "drag",
+      "room": "bedroom",
+      "title": "穿裤子",
+      "title_en": "Pants",
+      "hint": "把 Pants 卡片拖到裤子上",
+      "prop": {"img": "res://assets/props/prop_pants.png", "pos": [640, 340], "scale": 1.0},
+      "req_card": "card_pants",
+      "action": "pants",
+      "char": {"pos": [930, 505], "scale": 0.62},
+      "audio": {
+        "intro": "res://assets/audio/vo/vo_act4b_intro.mp3",
+        "action": "res://assets/audio/vo/vo_act4b_action.mp3",
+        "done": "res://assets/audio/vo/vo_act4b_done.mp3",
+        "timeout": "res://assets/audio/vo/vo_timeout_act4b.mp3"
+      },
+      "cards": [
+        {"id": "card_pants", "text": "Pants", "img": "res://assets/props/icon_pants.png", "vo": "res://assets/audio/vo/card_pants.mp3"},
+        {"id": "card_shirt", "text": "Shirt", "img": "res://assets/props/icon_shirt.png", "vo": "res://assets/audio/vo/card_shirt.mp3"},
+        {"id": "card_wake", "text": "Wake up", "img": "res://assets/props/icon_wake.png", "vo": "res://assets/audio/vo/card_wake.mp3"}
+      ]
+    },
+    {
+      "id": "goto_entrance",
+      "type": "cutscene",
+      "room": "entrance",
+      "title": "去玄关",
+      "title_en": "To the front door",
+      "vo": "res://assets/audio/vo/vo_goto_entrance.mp3",
+      "caption": "To the front door!",
+      "duration": 2.4,
+      "poses": [{"pose": "stand", "pos": [880, 505], "scale": 0.62},
+                {"pose": "stand", "pos": [420, 505], "scale": 0.62}]
+    },
+    {
+      "id": "shoes",
+      "type": "pair",
+      "room": "entrance",
+      "title": "穿鞋",
+      "title_en": "Shoes",
+      "hint": "左脚鞋拖到左脚，右脚鞋拖到右脚",
+      "props": [
+        {"id": "left", "img": "res://assets/props/prop_shoe_l.png", "pos": [620, 360], "scale": 0.8, "req_card": "card_shoe_l"},
+        {"id": "right", "img": "res://assets/props/prop_shoe_r.png", "pos": [760, 360], "scale": 0.8, "req_card": "card_shoe_r"}
+      ],
+      "action": "shoes",
+      "char": {"pos": [1000, 505], "scale": 0.62},
+      "audio": {
+        "intro": "res://assets/audio/vo/vo_act5_intro.mp3",
+        "left": "res://assets/audio/vo/vo_act5_shoe_l.mp3",
+        "right": "res://assets/audio/vo/vo_act5_shoe_r.mp3",
+        "done": "res://assets/audio/vo/vo_act5_done.mp3",
+        "timeout": "res://assets/audio/vo/vo_timeout_act5.mp3"
+      },
+      "cards": [
+        {"id": "card_shoe_l", "text": "Left shoe", "img": "res://assets/props/icon_shoe_l.png", "vo": "res://assets/audio/vo/card_shoe_l.mp3"},
+        {"id": "card_shoe_r", "text": "Right shoe", "img": "res://assets/props/icon_shoe_r.png", "vo": "res://assets/audio/vo/card_shoe_r.mp3"}
+      ]
+    },
+    {
+      "id": "checklist",
+      "type": "checklist",
+      "room": "entrance",
+      "title": "出门检查",
+      "title_en": "Checklist"
+    }
+  ]
+}

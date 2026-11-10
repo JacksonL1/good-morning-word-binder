@@ -8,6 +8,7 @@
 [ext_resource type="Texture2D" path="res://assets/ui/star.png" id="6_star"]
 [ext_resource type="PackedScene" path="res://scenes/Character.tscn" id="7_char"]
 [ext_resource type="PackedScene" path="res://scenes/Checklist.tscn" id="8_check"]
+[ext_resource type="PackedScene" path="res://scenes/Cutscene.tscn" id="9_cut"]
 
 [node name="Main" type="Control"]
 anchor_right = 1.0
@@ -28,9 +29,8 @@ stretch_mode = 6
 
 [node name="Stage" type="Node2D" parent="."]
 
-[node name="Prop" parent="Stage" instance=ExtResource("3_prop")]
+[node name="Props" type="Node2D" parent="Stage"]
 unique_name_in_owner = true
-position = Vector2(640, 372)
 
 [node name="Character" parent="Stage" instance=ExtResource("7_char")]
 unique_name_in_owner = true
@@ -315,6 +315,9 @@ layer = 20
 unique_name_in_owner = true
 
 [node name="Checklist" parent="." instance=ExtResource("8_check")]
+unique_name_in_owner = true
+
+[node name="Cutscene" parent="." instance=ExtResource("9_cut")]
 unique_name_in_owner = true
 
 [node name="IdleTimer" type="Timer" parent="."]

@@ -11,7 +11,7 @@ Usage:
     python tools/vo_pipeline.py --list     # show the clip table
 
 Clip sources:
-  * one clip per word card in data/story.json
+  * one clip per word card in data/levels/morning_routine.json
   * fixed UI phrases
   * the per-act story lines (intro / action / done / timeout / events),
     each with its own speaking rate
@@ -26,8 +26,8 @@ import sys
 import tempfile
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-STORY = os.path.join(ROOT, "data", "story.json")
-CHECKLIST = os.path.join(ROOT, "data", "checklist.json")
+GAME = os.path.join(ROOT, "data", "game.json")
+LEVELS_DIR = os.path.join(ROOT, "data", "levels")
 OUT_DIR = os.path.join(ROOT, "assets", "audio", "vo")
 
 VOICE = "en-US-AnaNeural"
@@ -84,23 +84,50 @@ ACT_VOICES = [
     ("vo_act6_badge_2.mp3", "Face? Wash, done!", "+0%"),
     ("vo_act6_badge_3.mp3", "Shirt? Put on, done!", "+0%"),
     ("vo_act6_badge_4.mp3", "Shoes? Put on, done!", "+0%"),
+    ("vo_act6_badge_5.mp3", "Pants? Pull up, done!", "+0%"),
     ("vo_act6_finish.mp3", "All done! Give me a high-five! Let's go to school!", "+5%"),
     ("vo_timeout_act6.mp3", "Tap the glowing badge to check!", "-10%"),
+    # Act 4b: pants
+    ("vo_act4b_intro.mp3", "Now your pants! One leg, two legs!", "-15%"),
+    ("vo_act4b_action.mp3", "Pull them up! Up, up!", "-5%"),
+    ("vo_act4b_done.mp3", "Perfect fit! Pants are on!", "+0%"),
+    ("vo_timeout_act4b.mp3", "Drag the pants to your legs!", "-10%"),
+    # Room transitions (cutscenes)
+    ("vo_goto_living.mp3", "Let's go to the living room!", "-10%"),
+    ("vo_goto_bathroom.mp3", "Off to the bathroom!", "-10%"),
+    ("vo_goto_bedroom.mp3", "Back to the bedroom!", "-10%"),
+    ("vo_goto_entrance.mp3", "To the front door!", "-10%"),
+    ("vo_brush_video.mp3", "Look! Up and down, round and round!", "-5%"),
 ]
 
 
 def load_cards() -> list[dict]:
-    with open(STORY, encoding="utf-8") as f:
-        levels = json.load(f)
+    """Collect every card used by any level file referenced in game.json."""
     cards: dict[str, dict] = {}
-    for level in levels:
-        for card in level.get("cards", []):
-            cards.setdefault(card["id"], {
-                "id": card["id"],
-                "text": card["text"],
-                "vo": card.get("vo", ""),
-                "rate": RATE,
-            })
+    level_files: list[str] = []
+    if os.path.exists(GAME):
+        with open(GAME, encoding="utf-8") as f:
+            manifest = json.load(f)
+        for path in manifest.get("levels", []):
+            name = os.path.basename(str(path))
+            level_files.append(os.path.join(LEVELS_DIR, name))
+    if not level_files and os.path.isdir(LEVELS_DIR):
+        level_files = [os.path.join(LEVELS_DIR, n) for n in sorted(os.listdir(LEVELS_DIR))
+                       if n.endswith(".json")]
+
+    for level_path in level_files:
+        if not os.path.exists(level_path):
+            continue
+        with open(level_path, encoding="utf-8") as f:
+            level = json.load(f)
+        for step in level.get("steps", []):
+            for card in step.get("cards", []):
+                cards.setdefault(card["id"], {
+                    "id": card["id"],
+                    "text": card["text"],
+                    "vo": card.get("vo", ""),
+                    "rate": RATE,
+                })
     return list(cards.values())
 
 

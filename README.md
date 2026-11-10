@@ -1,48 +1,68 @@
 # Good Morning! · 魔法单词本
 
-面向 **4–6 岁**儿童的英语启蒙拖拽游戏 MVP。孩子把单词卡片从底部“魔法单词本”拖到场景道具上，建立“物品 / 动作 — 英语发音”的多模态关联；每关成功后，场景里的小人会做出对应动作（起床、喝水、刷牙、洗脸、穿衣、穿鞋），最后完成门前自检清单。
+面向 **4–6 岁**儿童的英语启蒙拖拽游戏。孩子把单词卡片从底部“魔法单词本”拖到场景道具上，建立“物品 / 动作 — 英语发音”的多模态关联；每步成功后，小人在对应房间做出动作（起床、喝水、刷牙、洗脸、穿衣、穿裤、穿鞋），最后完成出门自检清单。
+
+**这是整个游戏的第一关（早晨动线）**，关卡/房间/步骤全部是数据配置，后续关卡和插入视频都不需要改代码。
 
 ![开始页](screenshots/01-start.png)
 
-| 起床前：小人还躺在床上 | 拖对 Wake up 后：慢慢坐起来 |
+| 卧室：还躺在床上 | 拖对 Wake up：坐起来 |
 | --- | --- |
-| ![躺床](screenshots/02-wake-up.png) | ![起床动作](screenshots/05-wake-action.png) |
+| ![躺床](screenshots/02-bedroom-wake.png) | ![起床动作](screenshots/03-wake-action.png) |
 
-| 拖拽中（半透明残影） | 零挫败提示（幽灵小手） |
+| 客厅：喝水 | 洗手间：刷牙 |
 | --- | --- |
-| ![拖拽](screenshots/04-drag-preview.png) | ![提示](screenshots/03-ghost-hint.png) |
+| ![喝水](screenshots/05-living-drink.png) | ![刷牙](screenshots/06-bathroom-brush.png) |
 
-| 穿衣关（含 Coat 干扰项） | 门前自检清单 |
+| 视频插入点（cutscene） | 卧室：穿裤子 |
 | --- | --- |
-| ![穿衣](screenshots/06-shirt.png) | ![清单](screenshots/07-checklist.png) |
+| ![视频位](screenshots/07-brush-video-slot.png) | ![裤子](screenshots/08-bedroom-pants.png) |
 
-![完成页](screenshots/08-finale.png)
+| 玄关：左右脚配对 | 出门检查清单 |
+| --- | --- |
+| ![穿鞋](screenshots/09-entrance-shoes.png) | ![清单](screenshots/10-checklist.png) |
+
+| 转场动画 | 完成页 |
+| --- | --- |
+| ![转场](screenshots/04-walk-cutscene.png) | ![完成](screenshots/11-finale.png) |
 
 > 引擎：Godot **4.3**（GDScript，GL Compatibility 渲染，1280×720 横屏）
-> 项目完全数据驱动：新增一关只需要改 `data/story.json`；清单内容在 `data/checklist.json`。
+> 数据驱动：关卡 `data/game.json` + `data/levels/*.json`，房间 `data/rooms.json`，清单 `data/checklist.json`。
 
 ---
 
-## 一、已实现功能（对照白皮书）
+## 一、已实现功能
 
-### 1. 内容与流程
-- 6 个拖拽场景 + 1 个门前清单（Act 6）：
-  1. **Act 1 起床** — 拖 `Wake up` 到床上；小人躺床 → 坐起 → 站起
-  2. **Act 1.5 喝水** — 拖 `Drink` 到水杯上；小人举杯、咕嘟咕嘟喝两口
-  3. **Act 2 刷牙** — 拖 `Brush` 到牙刷上；小人左右刷牙，刷毛/水声同步
-  4. **Act 3 洗脸** — 拖 `Wash` 到毛巾上；小人用毛巾擦脸，冒泡泡
-  5. **Act 4 穿衣** — 拖 `Shirt` 到衣服上；有 `Coat` 干扰项，拖错会播放“Too hot! Not the heavy coat!”
-  6. **Act 5 穿鞋** — 拖 `Shoes` 到鞋子上；小人弯腰穿鞋、左右各“啪”一下
-  7. **Act 6 门前清单** — 依次点 5 个徽章（水/牙/脸/衣/鞋），全部打勾后播放 High-five 完成音
-- 每关 3 张卡片（1 张正确 + 2 张干扰项），按关卡 id 确定性洗牌，避免孩子记住位置而不是记住单词。
-- 开始页 → 6 关 → 门前清单 → 完成页 → 再玩一次；顶部 6 颗进度星、静音按钮。
+### 1. 内容与流程（第 1 关：早晨）
+
+一条完整的**房间动线**，中间可以插动画/视频：
+
+| # | 步骤 | 房间 | 类型 | 内容 |
+| --- | --- | --- | --- | --- |
+| 1 | 起床 | 卧室 | drag | 拖 `Wake up` 到床上；小人躺床 → 坐起 → 站起 |
+| 2 | 去客厅 | → 客厅 | cutscene | 转场动画（可换成视频） |
+| 3 | 喝水 | 客厅 | drag | 拖 `Drink` 到水杯；小人举杯咕嘟 |
+| 4 | 去洗手间 | → 洗手间 | cutscene | 转场 |
+| 5 | 刷牙 | 洗手间 | drag | 拖 `Brush` 到牙刷；小人左右刷牙 |
+| 6 | 刷牙示范 | 洗手间 | cutscene | **视频插入点**（`video` 字段） |
+| 7 | 洗脸 | 洗手间 | drag | 拖 `Wash` 到毛巾；小人擦脸冒泡泡 |
+| 8 | 回卧室 | → 卧室 | cutscene | 转场 |
+| 9 | 穿衣 | 卧室 | drag | 拖 `Shirt`；有 `Coat` 干扰项 |
+| 10 | 穿裤子 | 卧室 | drag | 拖 `Pants`；小人提裤子 |
+| 11 | 去玄关 | → 玄关 | cutscene | 转场 |
+| 12 | 穿鞋 | 玄关 | **pair** | 左脚鞋 → 左脚，右脚鞋 → 右脚（左右必须配对） |
+| 13 | 出门检查 | 玄关 | checklist | 6 个徽章（水/牙/脸/上衣/裤子/鞋） |
+
+- 每步 2–3 张卡片（1 张正确 + 干扰项），按步骤 id 确定性洗牌。
+- 开始页 → 13 步 → 门前清单 → 完成页 → 再玩一次；顶部 13 颗进度星、静音按钮。
 
 ### 2. 核心交互（AAC 风格 Word Binder）
-- **发起端**：底部常驻单词本，横向 3 张可拖拽卡片；`_get_drag_data()` 返回 `{type, card_id, word}` 并用 `set_drag_preview()` 生成 **半透明卡片残影**（已验证残影跟随光标、源卡片变淡）。
+- **发起端**：底部常驻单词本，横向排列可拖拽卡片；`_get_drag_data()` 返回 `{type, card_id, word}` 并用 `set_drag_preview()` 生成 **半透明卡片残影**（已验证残影跟随光标、源卡片变淡）。
 - **接收端**：`BaseProp`（Control）覆盖道具 **+30%** 热区；`_can_drop_data()` 高亮可接收、`_drop_data()` 判定 `card_id == required_card`，成功/失败分别发射 `matched` / `mismatched` 自定义信号，并修改 `$"../Sprite2D".modulate`（绿 / 红）。
-- **成功**：道具变绿 + 弹性放大 + 小人动作动画 + 星星粒子 + 本关 `done` 配音，动作结束后再停留约 2.2 秒进入下一关。
-- **失败**：道具变红 + 横向摇晃 + 小人缩一下 + 本关 `wrong` / 通用 `Oops` 配音，计时器立即重置。
-- 点按卡片/道具都会发音；拖动卡片时立即朗读单词（把“拖”这个动作本身变成听力输入）。
+- **成功**：道具变绿 + 弹性放大 + 小人动作动画 + 星星粒子 + 本步 `done` 配音，动作结束后停留约 2.2 秒进入下一步。
+- **pair**：两个道具都要匹配；只对一半时提示 “再找一找！One more!”。
+- **失败**：道具变红 + 横向摇晃 + 小人缩一下 + `wrong` / 通用 `Oops` 配音，计时器立即重置。
+- 点按卡片/道具都会发音；拖动卡片时立即朗读单词。
 
 ### 3. 零挫败状态机
 - 进入关卡 / 拖拽 / 点击道具 / 拖错 → 重置 **10 秒**空闲计时器。
@@ -59,14 +79,15 @@
 
 ### 5. 工程结构（4 层解耦）
 ```
-assets/      美术、字体、音频资产池（bgs / props / char / ui / fonts / audio）
+assets/      美术、字体、音频资产池（bgs / props / char / ui / fonts / audio / video）
 assets_src/  素材源文件（PSD/AI/音频工程），带 .gdignore，不参与导入
-data/        story.json（6 关）+ checklist.json（门前清单）
+data/        game.json（关卡清单）+ rooms.json（房间）+ levels/*.json（步骤流）+ checklist.json
 docs/        ASSET_GUIDE.md 等开发文档
-scenes/      Main、BinderUI、WordCard、PropNode、GhostHand、Character、Checklist
-core/        Main.gd 导演、Character.gd、Checklist.gd、WordCard.gd、BaseProp.gd、
-             BinderUI.gd、GhostHand.gd、PropNode.gd、StoryData.gd、UiKit.gd、audio.gd
-tools/       美术/音频/VO/小人生成、资产校验、自动巡演与动画测试
+scenes/      Main、BinderUI、WordCard、PropNode、GhostHand、Character、Checklist、Cutscene
+core/        main.gd 导演、level_data.gd 关卡加载、cutscene.gd 插片、
+             character.gd 小人、checklist.gd 清单、word_card.gd、base_prop.gd、
+             binder_ui.gd、ghost_hand.gd、prop_node.gd、ui_kit.gd、audio.gd
+tools/       美术/音频/VO/小人生成、资产校验、自动巡演与角色几何检查
 ```
 
 ---
@@ -104,55 +125,88 @@ tools/       美术/音频/VO/小人生成、资产校验、自动巡演与动�
 
 ---
 
-## 三、数据格式 `data/story.json`
+## 三、内容结构（这是整个游戏的第一关）
 
-顶层是关卡数组，新增关卡**不需要改代码**：
+数据分三层，**全部由 JSON 驱动，加关卡 / 加房间 / 插动画都不需要改代码**：
+
+```text
+data/game.json                     关卡清单（一个游戏可以挂很多关）
+data/rooms.json                    房间表（背景 + 环境音）
+data/levels/morning_routine.json   第 1 关的步骤流
+data/checklist.json                门前清单
+```
+
+### 3.1 关卡文件 = 一串 `steps`
 
 ```json
 {
-  "id": "level_brush",
-  "title": "刷牙",
-  "title_en": "Brush",
-  "hint": "把 Brush 卡片拖到牙刷上",
-  "bg_img": "res://assets/bgs/bg_bathroom.png",
-  "prop_img": "res://assets/props/prop_brush.png",
-  "prop_pos": [640, 340],
-  "prop_scale": 1.12,
-  "req_card": "card_brush",
-  "action": "brush",
-  "char": {"pos": [930, 505], "scale": 0.62},
-  "ambience": "res://assets/audio/ambience/bathroom.wav",
-  "audio": {
-    "intro": "res://assets/audio/vo/vo_act2_intro.mp3",
-    "left": "res://assets/audio/vo/vo_act2_brush_l.mp3",
-    "right": "res://assets/audio/vo/vo_act2_brush_r.mp3",
-    "all": "res://assets/audio/vo/vo_act2_brush_all.mp3",
-    "done": "res://assets/audio/vo/vo_act2_done.mp3",
-    "timeout": "res://assets/audio/vo/vo_timeout_act2.mp3"
-  },
-  "cards": [
-    {"id": "card_brush", "text": "Brush",  "img": "res://assets/props/icon_brush.png", "vo": "res://assets/audio/vo/card_brush.mp3"},
-    {"id": "card_wake",  "text": "Wake up","img": "res://assets/props/icon_wake.png",  "vo": "res://assets/audio/vo/card_wake.mp3"}
+  "id": "morning_routine",
+  "title": "Good Morning!",
+  "title_cn": "早晨的七件事",
+  "steps": [
+    {"type": "drag",      "room": "bedroom",  "req_card": "card_wake", "prop": {...}, "cards": [...]},
+    {"type": "cutscene",  "room": "living",   "video": "res://assets/video/x.mp4", "duration": 2.4},
+    {"type": "drag",      "room": "living",   "req_card": "card_drink", ...},
+    {"type": "pair",      "room": "entrance", "props": [ {...left}, {...right} ], ...},
+    {"type": "checklist", "room": "entrance"}
   ]
 }
 ```
 
+| 步骤类型 | 作用 | 关键字段 |
+| --- | --- | --- |
+| `drag` | 拖一张卡片到道具 | `prop{img,pos,scale}`、`req_card`、`cards[]`、`action`、`char`、`audio` |
+| `pair` | 多个道具各自匹配（左右鞋） | `props[{img,pos,scale,req_card}]`、`cards[]` |
+| `cutscene` | **插入动画 / 视频** | `video`、`poses`、`character_action`、`duration`、`vo`、`caption`、`skip_after` |
+| `checklist` | 出门前徽章自检 | 读取 `data/checklist.json` |
+
+每个 step 还可以带 `room`——进入时自动切换背景与环境音（带 0.32 秒转场）。
+
+### 3.2 插入动画 / 视频（你说过的刷牙视频、穿衣视频）
+
+`cutscene` 按优先级取素材：
+
+1. **`video`**：`res://assets/video/xxx.mp4`（或 `.ogv`）存在时，用 `VideoStreamPlayer` 全屏播放；
+2. **`poses`**：一组 `{pose, pos, scale}`，小人会走过去 / 切姿态；
+3. **`character_action`**：直接播放某个动作（`brush` / `shirt` / `pants` …）。
+
+没有素材时不会报错，只是退回 `poses`。所以在步骤流里先写好位置，等视频做好直接丢文件进去即可：
+
+```json
+{"id": "brush_video", "type": "cutscene", "room": "bathroom",
+ "caption": "Up and down, round and round!",
+ "duration": 4.0, "skip_after": 1.2,
+ "vo": "res://assets/audio/vo/vo_brush_video.mp3",
+ "video": "res://assets/video/brush_teeth.mp4",
+ "character_action": "brush"}
+```
+
+孩子点一下屏幕就能跳过；`skip_after` 秒后出现“点击继续”提示。
+
+> Godot 4.3 的 `VideoStreamPlayer` 原生只播 **OGV/Theora**；MP4 需要 WebM/OGV 转换，或装插件。把视频转成 `.ogv` 最省事（`ffmpeg -i in.mp4 -c:v libtheora -c:a libvorbis out.ogv`），文件名写进 `video` 即可。
+
+### 3.3 新增一关
+
+1. 在 `data/levels/` 下复制一个关卡文件，改 `id` / `title` / `steps`；
+2. 在 `data/game.json` 的 `levels` 数组里加上路径；
+3. 需要新房间就在 `data/rooms.json` 加一项（背景图 + 环境音）。
+
+不需要改任何 GDScript。加载时会校验：未知步骤类型、缺 `req_card`、缺 `cards`、pair 少于两个道具、未知房间——都会打印错误并跳过该步，不会崩。
+
+### 3.4 字段速查
+
 | 字段 | 说明 |
 | --- | --- |
-| `title` / `title_en` | 顶部关卡名（中文小字 + 英文大字） |
-| `hint` | 顶部中文提示（拖错后临时换成“再试一次”，2.4s 后恢复） |
-| `bg_img` / `prop_img` | 背景图 / 道具图，缺失时校验会直接报错 |
-| `prop_pos` | 道具中心坐标（设计分辨率 1280×720） |
-| `prop_scale` | 在自适应尺寸基础上的额外缩放 |
-| `req_card` | 正确卡片 id，必须出现在 `cards` 中 |
-| `cards[]` | `id`、`text`、`img`、`vo`；每关建议 3 张 |
-| `action` | 小人的成功动作：`wake` / `drink` / `brush` / `wash` / `shirt` / `shoes` |
-| `char` | 小人站位与起始姿态；起床关额外有 `start_pose:"lying"`、`start_pos`、`start_scale` |
-| `audio` | 分幕语音：`intro` / `action` / `done` / `timeout`，以及 `left` / `right` / `all` / `sip` / `loop` / `wrong` 等事件 |
-| `ambience` | 该关的环境循环音（卧室/浴室） |
-| 可选 `id` | 用于洗牌种子；缺省自动生成 |
-
-加载时会做完整校验（字段、重复 id、卡片图片、`req_card` 是否存在），坏关卡会被跳过并打印错误，不会崩游戏。**门前清单**由 `data/checklist.json` 配置（5 个徽章、图标、每条语音）。
+| `title` / `title_en` | 顶部标题（中文小字 + 英文大字） |
+| `hint` | 顶部中文提示 |
+| `room` | `bedroom` / `living` / `bathroom` / `entrance` |
+| `prop.pos` / `prop.scale` | 道具中心坐标（1280×720）与缩放 |
+| `req_card` | 正确卡片 id，必须在 `cards` 中 |
+| `cards[]` | `id`、`text`、`img`、`vo` |
+| `action` | 小人动作：`wake` / `drink` / `brush` / `wash` / `shirt` / `pants` / `shoes` |
+| `char` | 小人站位、缩放；起床步额外有 `start_pose:"lying"`、`start_pos`、`start_scale` |
+| `audio` | 分幕语音：`intro` / `action` / `done` / `timeout`，以及 `left` / `right` / `all` / `sip` / `loop` / `wrong` |
+| `ambience` | 该房间的环境循环音 |
 
 ---
 
@@ -162,15 +216,18 @@ tools/       美术/音频/VO/小人生成、资产校验、自动巡演与动�
 | --- | --- | --- |
 | `_get_drag_data` + 半透明残影 | `core/word_card.gd` | 拖拽时 `modulate.a = 0.35` 淡化源卡片；`_build_drag_preview()` 复制卡片外观并 `set_drag_preview()`；拖拽数据为字典 |
 | `_can_drop_data` / `_drop_data` + 信号 + `$"../Sprite2D"` 变色 | `core/base_prop.gd` | `matched` / `mismatched` 自定义信号；绿/红 modulate；错误摇晃；+30% 热区 |
-| 读取 `story.json`、过关切景、10s Timer + Tween 幽灵手 | `core/main.gd` + `core/ghost_hand.gd` | `StoryData` 解析；`DONE_HOLD = 2.2`；`IDLE_HINT_DELAY = 10.0`；`Tween` 移动 + 循环弹跳；`_reset_idle()` 统一重置 |
-| 小人动画 | `core/character.gd` + `scenes/Character.tscn` | 11 个姿态 + Tween 序列：躺→坐→站、举杯、左右刷牙、擦脸、穿衣、穿鞋；动作内按时间点播放分幕语音/音效 |
-| 门前清单 | `core/checklist.gd` + `scenes/Checklist.tscn` | 5 个徽章、独立 10s 提示、逐条 badge 语音、全部打勾后 High-five + 完成页 |
-| 4 层架构 | `assets/` `data/` `scenes/` `core/` | 代码不含任何具体单词，新增关卡只改 JSON |
+| 步骤流导演 | `core/main.gd` | `drag` / `pair` / `cutscene` / `checklist` 四种步骤；房间切换；10s 空闲计时器；进度星 |
+| 数据加载与校验 | `core/level_data.gd` | 读 `game.json` → 每个关卡文件 → 清洗步骤，坏数据跳过 |
+| 插入动画 / 视频 | `core/cutscene.gd` + `scenes/Cutscene.tscn` | video → poses → character_action 三级回退；点击跳过；字幕气泡 |
+| 小人动画 | `core/character.gd` | 11 个姿态 + Tween 序列：躺→坐→站、举杯、左右刷牙、擦脸、穿衣、穿裤、穿鞋 |
+| 门前清单 | `core/checklist.gd` | 6 个徽章、独立 10s 提示、逐条语音、全部打勾后 High-five + 完成页 |
+| 4 层架构 | `assets/` `data/` `scenes/` `core/` | 代码不含任何具体单词或关卡 |
 
 其他细节：
 - `core/audio.gd` 作为 Autoload `Audio`，VO / SFX / BGM / Ambience 分播放器，静音全局生效，WAV 运行时设置循环。
 - `core/ui_kit.gd` 统一圆角面板 / 按钮 / 字体主题（`assets/ui/kid_theme.tres` 通过 `gui/theme/custom` 全局生效，包括 CanvasLayer 下的 UI）。
-- 拖拽接收区为圆形道具的矩形外接框 ×1.3，对 4 岁孩子的手指足够宽容。
+- 拖拽接收区为道具的矩形外接框 ×1.3，并自动避开顶部 UI 与底部单词本。
+
 
 ---
 
@@ -185,7 +242,7 @@ tools/       美术/音频/VO/小人生成、资产校验、自动巡演与动�
 
 1. 新图导出为 **PNG（RGBA，透明背景）**，按推荐尺寸覆盖同名文件；
 2. 双击 **`reimport_assets.bat`** 让 Godot 重新导入（或切回编辑器窗口）；
-3. 运行 `run_game.bat`；位置/大小不合适就改 `story.json` 的 `prop_pos` / `prop_scale`。
+3. 运行 `run_game.bat`；位置/大小不合适就改 `data/levels/morning_routine.json` 的 `prop_pos` / `prop_scale`。
 
 | 类型 | 路径 | 推荐尺寸 | 关键要求 |
 | --- | --- | --- | --- |
@@ -195,10 +252,10 @@ tools/       美术/音频/VO/小人生成、资产校验、自动巡演与动�
 | 小人 | `assets/char/char_*.png` | 512×512 | 透明背景，站立姿态脚底对齐 y≈468 |
 | 卡片/面板 | `assets/ui/card.png`、`panel.png` | 256×256 / 512×256 | 九宫格，注意 patch margin |
 | 幽灵手 | `assets/ui/ghost_hand.png` | 180×220 | 透明背景、食指朝下 |
-| 音频 | `assets/audio/**` | WAV/MP3/OGG | 路径见 `story.json` / `checklist.json` / `core/audio.gd` |
+| 音频 | `assets/audio/**` | WAV/MP3/OGG | 路径见 `data/levels/morning_routine.json` / `checklist.json` / `core/audio.gd` |
 | 字体 | `assets/fonts/*.ttf` | — | 改 `assets/ui/kid_theme.tres` |
 
-- 换文件名/换一整套主题：改 `story.json` 的 `res://` 路径或 `.tscn` 的 `ext_resource` 即可，不用改代码。
+- 换文件名/换一整套主题：改 `data/levels/morning_routine.json` 的 `res://` 路径或 `.tscn` 的 `ext_resource` 即可，不用改代码。
 - 源文件（PSD/AI/Procreate/音频工程）放 `assets_src/`，该目录带 `.gdignore`，Godot 不会导入。
 - ⚠️ **替换后不要运行 `tools/gen_art.py` / `tools/gen_audio.py`**，它们会覆盖你的素材。
 
@@ -222,7 +279,7 @@ python tools/vo_pipeline.py            # 只补缺失
 python tools/vo_pipeline.py --force    # 全部重生成
 ```
 
-`vo_pipeline.py` 自动从 `story.json` 读取卡片列表，并内置全部 Act 1–6 的分幕台词与语速；新增单词卡片后重新运行即可生成对应 VO。
+`vo_pipeline.py` 自动从 `data/levels/morning_routine.json` 读取卡片列表，并内置全部 Act 1–6 的分幕台词与语速；新增单词卡片后重新运行即可生成对应 VO。
 
 ### 5.3 AI 生图建议
 
@@ -233,45 +290,49 @@ python tools/vo_pipeline.py --force    # 全部重生成
 ## 六、自测与验收
 
 ```powershell
-# 资产完整性：6 关 + 清单 + 小人姿态 + 全部分幕语音，共 125 个引用
+# 资产完整性：房间 + 关卡步骤 + 清单 + 小人姿态 + 全部分幕语音
 & godot --headless --path . --script res://tools/validate_project.gd
 
-# 自动巡演：开始页 → 拖错 → 幽灵手 → 真实鼠标拖拽 → 小人动画 → 6 关 → 门前清单 → 完成页
+# 自动巡演：开始页 → 拖错 → 幽灵手 → 真实鼠标拖拽 → 13 步（含转场/清单）→ 完成页
 & godot --path . --audio-driver Dummy -- --autotest --shots="C:/tmp/shots"
 
 # 零挫败计时器：真实等待 10 秒后截图
 & godot --path . --audio-driver Dummy -- --autotest --idletest --shots="C:/tmp/shots"
 
-# 动画姿态序列：逐关打印 lying→sit→stand / brush_a↔brush_b / shoes→stand_shoes
+# 动画姿态序列：逐步打印 lying→sit→stand / brush_a↔brush_b / shoes→stand_shoes
 & godot --path . --audio-driver Dummy -- --autotest --animtest
+
+# 小人几何自检（无肩膀凸起、有裤子、躺姿头身相连）
+python tools/check_character.py
 ```
 
 `tools/autopilot.gd` 会用 `Input.parse_input_event` 合成完整的按下—移动—释放流程，并按窗口缩放换算坐标，因此 Godot 原生拖放链路（`_get_drag_data` → `_can_drop_data` → `_drop_data`）在每次自测中都会被真实验证，而不是只调用内部方法。
 
 最近一次验收结果：
-- `levels: 6`, `checked: 125`, `errors: 0`
-- 开始页 **PLAY 按钮真实点击**后进入第 1 关；完成页“再玩一次”点击后回到第 1 关
-- 真实拖拽成功过关（无 fallback 警告）
-- 动画姿态验证：`lying → sit → stand`、`drink → stand`、`brush_a/brush_b`、`wash`、`shirt`、`shoes → stand_shoes`
-- 10s 空闲：`ghost visible=true rect=(314,328,220,250)` → 点按后 `ghost=false timer≈9.6s`
-- 6 关全部通过 → 门前清单 5 个徽章全部打勾 → 完成页 `finale=true`
+- `levels: 1  rooms: 4`，`checked: 143 errors: 0`（1 条预期 WARN：刷牙视频文件尚未提供，自动回退到姿态动画）
+- 完整 13 步走通：卧室 → 客厅 → 洗手间 → 卧室 → 玄关 → 清单 → 完成页
+- 真实鼠标拖拽成功（`[drag] dragging=true` 数据正确）
+- 房间切换验证：4 个房间截图平均色各不相同，客厅有沙发（teal 1916px）、玄关有木门（3680px）、洗手间有瓷砖（32509px）
+- 小人几何自检：站立类姿态 `slivers=0`（无第二肩膀）、裤色像素在腰部以下 92 行、躺姿头身重叠 74px
+- 门前清单 6 个徽章全部打勾 → `finale=true`；“再玩一次”回到第 1 步
 
 ---
 
 ## 七、已知边界 / 下一步
 
-- **字体授权**：当前字体为 Windows 自带 `comic.ttf`（Comic Sans MS）与 `deng.ttf`（等线），仅适合本机 MVP 开发；**对外发布前请替换为 OFL 字体**（如 Fredoka / Comic Neue + 站酷快乐体 / Noto Sans SC），并更新 `assets/ui/kid_theme.tres`。外网字体 CDN 在本机被网络策略拦截，因此未内置。
+- **字体授权**：当前字体为 Windows 自带 `comic.ttf`（Comic Sans MS）与 `deng.ttf`（等线），仅适合本机开发；**对外发布前请替换为 OFL 字体**（如 Fredoka / Comic Neue + 站酷快乐体 / Noto Sans SC），并更新 `assets/ui/kid_theme.tres`。
 - 美术为程序化占位图，风格统一但精细度低于 AI 生图；直接替换同名资产即可。
-- **小人动画是“姿态切换 + Tween”**（11 张 512×512 姿态图），不是骨骼动画；替换时保持站立姿态脚底在 y≈468、身体居中，动作序列会自动适配。需要骨骼/逐帧动画时可把 `Character.tscn` 换成 `AnimatedSprite2D`，数据字段和导演逻辑可保留。
-- 门前清单是独立的 5 徽章点击关，不复用拖拽判定；语音/图标都在 `data/checklist.json`。
+- **小人动画是“姿态切换 + Tween”**（11 张 512×512 姿态图），不是骨骼动画；替换时保持站立姿态脚底在 y≈468、身体居中。需要骨骼/逐帧动画时可把 `Character.tscn` 换成 `AnimatedSprite2D`，数据字段和导演逻辑可保留。
+- **视频**：`cutscene` 已支持 `video` 字段，但 Godot 4.3 原生只播 OGV/Theora；MP4 需先转 `.ogv`（`ffmpeg -i in.mp4 -c:v libtheora -c:a libvorbis out.ogv`）。文件缺失时自动回退到 `poses` 姿态动画，不会崩。
+- 门前清单是独立的 6 徽章点击关，不复用拖拽判定；语音/图标都在 `data/checklist.json`。
 - 目前是单机单会话：无存档、无家长门、无难度分级、无麦克风跟读评分。
-- 音频共 48 条 VO + 10 个 SFX + BGM + 2 条环境音；语音合成适合 MVP，正式版建议母语儿童配音演员录制并做响度标准化。
+- 音频共 60 条 VO + 10 个 SFX + BGM + 2 条环境音；语音合成适合 MVP，正式版建议母语儿童配音演员录制并做响度标准化。
 - 尚未提供导出模板；安装 Godot Export Templates 后可在 `Project → Export` 直接导出 Windows / Android。
 
 ---
 
 ## 八、许可
 
-- 代码、`story.json`、程序化美术与合成音频：可随项目自由使用。
+- 代码、`data/levels/morning_routine.json`、程序化美术与合成音频：可随项目自由使用。
 - 配音由 Microsoft Edge TTS 生成，用于 MVP 演示；正式发行请确认服务条款并替换为自有录音。
 - 字体见上文授权提示。

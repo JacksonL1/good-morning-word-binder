@@ -1,0 +1,6 @@
+{
+  "title": "Good Morning!",
+  "levels": [
+    "res://data/levels/morning_routine.json"
+  ]
+}

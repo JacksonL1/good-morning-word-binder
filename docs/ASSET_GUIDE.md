@@ -3,7 +3,7 @@
 这版 MVP 的所有视觉和声音都在 `assets/` 下，**代码里没有写死任何图片或单词**。替换素材有两种做法：
 
 1. **最省事**：保持文件名和尺寸不变，直接覆盖同名文件；
-2. **更自由**：换成任意文件名/尺寸，然后改 `data/story.json` 或对应 `.tscn` 的路径与参数。
+2. **更自由**：换成任意文件名/尺寸，然后改 `data/levels/morning_routine.json` 或对应 `.tscn` 的路径与参数。
 
 替换后需要让 Godot 重新导入（见第 4 节）。游戏逻辑、拖拽、计时器都不需要改。
 
@@ -32,7 +32,7 @@
 1. 把新图导出为 **PNG（RGBA，透明背景）**，按上表尺寸覆盖同名文件；
 2. 双击 `reimport_assets.bat`（或在 Godot 编辑器里切一下窗口让它自动导入）；
 3. 运行 `run_game.bat` 看效果；
-4. 位置/大小不合适 → 调 `data/story.json` 里的 `prop_pos` / `prop_scale`。
+4. 位置/大小不合适 → 调 `data/levels/morning_routine.json` 里的 `prop_pos` / `prop_scale`。
 
 > ⚠️ 不要运行 `tools/gen_art.py`，它会重新生成占位图并覆盖你的素材。详见第 9 节。
 
@@ -63,7 +63,7 @@
 | `prop_shoes.png` | 512×512 | 穿鞋 |
 
 - 必须 **透明背景**，物体居中，四周可以留透明边。
-- 引擎会自动把它等比缩放到最多 **560×440**，再乘以 `story.json` 的 `prop_scale`。
+- 引擎会自动把它等比缩放到最多 **560×440**，再乘以 `data/levels/morning_routine.json` 的 `prop_scale`。
 - 道具底部可以自带一点柔和阴影（像现在的图一样），会更有落地感。
 - 尺寸不是 512 也能用，引擎按真实像素计算；只是非正方形时注意构图居中。
 
@@ -115,7 +115,7 @@
 - 保持 512×512 画布；
 - 站立类姿态的**脚底对齐 y≈468**、身体水平居中，`Character` 会用 `offset = -212` 让脚底落在节点原点；
 - 躺姿 `char_lying.png` 例外：整张图水平构图，节点以图片中心定位；
-- 小人默认显示在舞台右侧 `(930, 505)`，缩放 `0.62`，可在 `story.json` 的 `char.pos/scale` 调整；
+- 小人默认显示在舞台右侧 `(930, 505)`，缩放 `0.62`，可在 `data/levels/morning_routine.json` 的 `char.pos/scale` 调整；
 - 11 张图必须同一画风、同一比例；否则切姿态时会“跳”。
 
 ### 2.6 门前清单 `data/checklist.json`
@@ -138,9 +138,9 @@
 
 ### 2.7 分幕语音与环境音
 
-- 每关的 `story.json` 里有 `audio` 块：`intro` / `action` / `done` / `timeout`，以及刷牙 `left/right/all`、穿鞋 `left/right`、喝水 `sip`、洗脸 `loop`、穿衣 `wrong`；
+- 每关的 `data/levels/morning_routine.json` 里有 `audio` 块：`intro` / `action` / `done` / `timeout`，以及刷牙 `left/right/all`、穿鞋 `left/right`、喝水 `sip`、洗脸 `loop`、穿衣 `wrong`；
 - 文件名已按 `vo_act1_*.mp3`、`vo_act1_5_*.mp3` …… `vo_timeout_act6.mp3` 生成，直接在 `assets/audio/vo/` 覆盖即可；
-- 环境音：`assets/audio/ambience/bedroom.wav`、`bathroom.wav`，由 `story.json` 的 `ambience` 指定；
+- 环境音：`assets/audio/ambience/bedroom.wav`、`bathroom.wav`，由 `data/levels/morning_routine.json` 的 `ambience` 指定；
 - 动作音效：`brush.wav`（刷牙）、`splash.wav`（洗脸）、`snap.wav`（穿鞋）、`sparkle.wav`（穿衣/打勾）；
 - 全部由 `tools/gen_audio.py` 合成，替换后不要重复运行该脚本。
 
@@ -177,9 +177,9 @@ assets/bgs/bg_bedroom.png   ← 用你的新卧室图覆盖
 
 把新文件放到 `assets/` 下任意位置，然后改引用：
 
-- 背景 / 道具 / 卡片：改 `data/story.json` 对应字段的 `res://` 路径；
+- 背景 / 道具 / 卡片：改 `data/levels/morning_routine.json` 对应字段的 `res://` 路径；
 - UI 图片：改 `.tscn` 里的 `texture = ExtResource(...)`，或改 `ext_resource path`；
-- 音频：改 `story.json` 的 `vo` 或 `core/audio.gd` 的 `SFX_PATHS` / `BGM_PATH`。
+- 音频：改 `data/levels/morning_routine.json` 的 `vo` 或 `core/audio.gd` 的 `SFX_PATHS` / `BGM_PATH`。
 
 适合一组全新素材（例如整套换成海洋主题），可以先把新图放进来、逐步替换 JSON，确认无误再删旧图。
 
@@ -211,7 +211,7 @@ Godot 使用 `.godot/imported/` 缓存。覆盖 PNG/MP3 后，如果直接运行
 
 ## 5. 构图/大小不合适怎么调
 
-改 `data/story.json` 的关卡字段，不用改代码：
+改 `data/levels/morning_routine.json` 的关卡字段，不用改代码：
 
 ```json
 "prop_pos": [640, 340],
@@ -249,14 +249,14 @@ Godot 使用 `.godot/imported/` 缓存。覆盖 PNG/MP3 后，如果直接运行
 
 4. 生成/放入 `card_jump.mp3`：
    - 手动录音：把 mp3 放到 `assets/audio/vo/card_jump.mp3`；
-   - 或运行 `python tools/vo_pipeline.py`（它会读取 story.json，只为缺失的卡片生成）；
+   - 或运行 `python tools/vo_pipeline.py`（它会读取 data/levels/morning_routine.json，只为缺失的卡片生成）；
 5. 运行 `reimport_assets.bat`，再跑一次游戏。
 
 > `text` 决定卡片上的字和 TTS 读音；`id` 用来做匹配，必须唯一且和 `req_card` 对应。
 
 ### 6.2 加一整关
 
-复制 `story.json` 里任意一个关卡对象，改这些字段：
+复制 `data/levels/morning_routine.json` 里任意一个关卡对象，改这些字段：
 
 ```json
 {
@@ -289,7 +289,7 @@ Godot 使用 `.godot/imported/` 缓存。覆盖 PNG/MP3 后，如果直接运行
 
 ### 7.1 单词配音
 
-路径写在 `data/story.json` 每个 card 的 `vo` 字段。两种做法：
+路径写在 `data/levels/morning_routine.json` 每个 card 的 `vo` 字段。两种做法：
 
 - 覆盖同名文件（`assets/audio/vo/card_brush.mp3`）；
 - 或换文件名，同时改 `vo` 路径。
@@ -343,7 +343,7 @@ const SFX_PATHS := {
 
 | 文案 | 位置 |
 | --- | --- |
-| 关卡名 / 提示 | `data/story.json` 的 `title` / `title_en` / `hint` |
+| 关卡名 / 提示 | `data/levels/morning_routine.json` 的 `title` / `title_en` / `hint` |
 | 开始页标题/副标题/按钮 | `scenes/Main.tscn`（`StartTitle`、`StartSub`、`PlayButton`、`StartNote`） |
 | 完成页标题/按钮 | `scenes/Main.tscn`（`FinaleTitle`、`FinaleSub`、`ReplayButton`） |
 | 成功 / 失败临时提示 | `core/main.gd`（`太棒了！`、`再试一次吧！`） |
@@ -404,7 +404,7 @@ thick clean outlines, soft pastel palette, centered object, no text
 替换后按顺序检查：
 
 - [ ] 图片是 PNG RGBA，背景透明处没有被填成白色；
-- [ ] 文件名/路径与 `story.json`、`.tscn` 一致；
+- [ ] 文件名/路径与 `data/levels/morning_routine.json`、`.tscn` 一致；
 - [ ] 已运行 `reimport_assets.bat`（或编辑器已导入）；
 - [ ] 道具完整出现在画面中央，没有被底部单词本遮住；
 - [ ] 卡片图标大小一致、文字没有被裁切；
@@ -429,7 +429,7 @@ thick clean outlines, soft pastel palette, centered object, no text
 没重新导入。跑 `reimport_assets.bat`，或删 `.godot/imported`。
 
 **道具太大/太小？**  
-改 `story.json` 的 `prop_scale`；位置改 `prop_pos`。热区会跟着变。
+改 `data/levels/morning_routine.json` 的 `prop_scale`；位置改 `prop_pos`。热区会跟着变。
 
 **道具下面被单词本挡住？**  
 把 `prop_pos` 的 y 调小（向上移），或把 `prop_scale` 调小。

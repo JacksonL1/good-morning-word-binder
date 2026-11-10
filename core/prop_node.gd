@@ -8,7 +8,7 @@ extends Node2D
 ##   ├── Sprite2D   <- the artwork (BaseProp tints this node)
 ##   └── DropZone (Control/BaseProp) <- +30% hit area
 ##
-## `setup()` is fully data driven from one entry of story.json.
+## `setup()` is fully data driven from one entry of data/levels/morning_routine.json.
 
 const MAX_SIZE := Vector2(560, 440)
 # Keep the (invisible) drop receiver out of the top bar and out of the word
@@ -18,6 +18,16 @@ const HIT_BOTTOM_LIMIT := 532.0
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var drop_zone: BaseProp = $DropZone
+
+
+## Configures this prop from a step's `prop` / `props[]` entry.
+func setup_prop(cfg: Dictionary, req_card: String) -> void:
+	setup({
+		"prop_img": cfg.get("img", ""),
+		"prop_pos": cfg.get("pos", [640, 340]),
+		"prop_scale": cfg.get("scale", 1.0),
+		"req_card": req_card,
+	})
 
 
 func setup(level: Dictionary) -> void:

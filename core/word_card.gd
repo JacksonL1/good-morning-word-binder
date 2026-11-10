@@ -42,7 +42,7 @@ func _ready() -> void:
 		word_label.text = word_text
 
 
-## Fills the card with one entry of `cards` from story.json.
+## Fills the card with one entry of `cards` from data/levels/morning_routine.json.
 func setup(card: Dictionary) -> void:
 	card_id = String(card.get("id", ""))
 	word_text = String(card.get("text", card_id))

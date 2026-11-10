@@ -25,13 +25,19 @@
     },
     {
       "label": "Shirt",
-      "cn": "穿衣",
+      "cn": "上衣",
       "icon": "res://assets/props/icon_shirt.png",
       "vo": "res://assets/audio/vo/vo_act6_badge_3.mp3"
     },
     {
+      "label": "Pants",
+      "cn": "裤子",
+      "icon": "res://assets/props/icon_pants.png",
+      "vo": "res://assets/audio/vo/vo_act6_badge_5.mp3"
+    },
+    {
       "label": "Shoes",
-      "cn": "穿鞋",
+      "cn": "鞋子",
       "icon": "res://assets/props/icon_shoes.png",
       "vo": "res://assets/audio/vo/vo_act6_badge_4.mp3"
     }

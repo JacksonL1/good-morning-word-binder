@@ -4,7 +4,7 @@ extends Node2D
 ## The little kid. Poses are swapped and tweened; the director waits for the
 ## action animation before showing the "done" line.
 ##
-## story.json drives the setup:
+## data/levels/morning_routine.json drives the setup:
 ##   "action": "wake|drink|brush|wash|shirt|shoes",
 ##   "char": { "pos": [930,505], "scale": 0.62,
 ##             "start_pose": "lying", "start_pos": [640,330], "start_scale": 0.62 }
@@ -67,14 +67,15 @@ func setup(level: Dictionary) -> void:
 	_start_idle()
 
 
-func play_action(audio: Dictionary) -> void:
+func play_action(audio: Dictionary, action_override: String = "") -> void:
 	if _busy:
 		return
 	_busy = true
 	_token += 1
 	var token := _token
 	_stop_idle()
-	match action:
+	var kind := action_override if not action_override.is_empty() else action
+	match kind:
 		"wake":
 			await _act_wake(audio, token)
 		"drink":
@@ -85,6 +86,8 @@ func play_action(audio: Dictionary) -> void:
 			await _act_wash(audio, token)
 		"shirt":
 			await _act_shirt(audio, token)
+		"pants":
+			await _act_pants(audio, token)
 		"shoes":
 			await _act_shoes(audio, token)
 		_:
@@ -94,6 +97,22 @@ func play_action(audio: Dictionary) -> void:
 	_busy = false
 	_settle_pose()
 	_start_idle()
+
+
+## Walk / fade to another pose and screen position (used by cutscenes).
+func show_at(pose: String, pos: Vector2, new_scale: float, duration: float = 0.5) -> void:
+	_stop_idle()
+	idle_pos = pos
+	idle_scale = new_scale
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(self, "position", pos, duration) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	tween.tween_property(self, "scale", Vector2.ONE * new_scale, duration) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	await tween.finished
+	if _pose != pose:
+		_set_pose(pose, pos, new_scale)
 
 
 func play_wince() -> void:
@@ -201,6 +220,23 @@ func _act_shirt(audio: Dictionary, token: int) -> void:
 			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	await tween.finished
 	await _timer(0.30)
+
+
+func _act_pants(audio: Dictionary, token: int) -> void:
+	Audio.play_vo(String(audio.get("action", "")))
+	# bend down, then pop upright wearing the pants
+	await _swap_pose("shoes", idle_pos, idle_scale * 0.96, 0.22)
+	if token != _token:
+		return
+	await _timer(0.45)
+	Audio.play_sfx("sparkle", -4.0)
+	await _swap_pose("shirt", idle_pos, idle_scale * 1.04, 0.26)
+	await _timer(0.2)
+	var tween := create_tween()
+	tween.tween_property(self, "scale", Vector2.ONE * idle_scale, 0.28) \
+			.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	await tween.finished
+	await _timer(0.25)
 
 
 func _act_shoes(audio: Dictionary, token: int) -> void:

@@ -1,0 +1,26 @@
+{
+  "bedroom": {
+    "name": "卧室",
+    "name_en": "Bedroom",
+    "bg": "res://assets/bgs/bg_bedroom.png",
+    "ambience": "res://assets/audio/ambience/bedroom.wav"
+  },
+  "living": {
+    "name": "客厅",
+    "name_en": "Living Room",
+    "bg": "res://assets/bgs/bg_living.png",
+    "ambience": "res://assets/audio/ambience/bedroom.wav"
+  },
+  "bathroom": {
+    "name": "洗手间",
+    "name_en": "Bathroom",
+    "bg": "res://assets/bgs/bg_bathroom.png",
+    "ambience": "res://assets/audio/ambience/bathroom.wav"
+  },
+  "entrance": {
+    "name": "玄关",
+    "name_en": "Entrance",
+    "bg": "res://assets/bgs/bg_entrance.png",
+    "ambience": "res://assets/audio/ambience/bedroom.wav"
+  }
+}
