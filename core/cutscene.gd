@@ -64,7 +64,7 @@ func _build() -> void:
 	_caption_pill.add_child(_caption)
 
 	_hint = Label.new()
-	_hint.text = "点击继续  ·  tap to continue"
+	_hint.text = "Tap to continue"
 	_hint.position = Vector2(440, 648)
 	_hint.size = Vector2(400, 30)
 	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -87,7 +87,10 @@ func _build() -> void:
 
 
 ## Plays one cutscene step and returns when it is over.
-func play(step: Dictionary, character: Character) -> void:
+## `on_midpoint` is called when the character is off-screen, so the caller can
+## swap the room background while nobody is looking.
+func play(step: Dictionary, character: Character,
+		on_midpoint: Callable = Callable()) -> void:
 	_token += 1
 	var token := _token
 	_running = true
@@ -120,10 +123,13 @@ func play(step: Dictionary, character: Character) -> void:
 	await tween.finished
 
 	if not has_video:
-		await _play_character_part(step, character, token)
+		if bool(step.get("walk", false)):
+			await _play_walk(step, character, on_midpoint, token)
+		else:
+			await _play_character_part(step, character, token)
 
 	# Wait out the remaining time, allowing a tap to finish early.
-	var remaining := maxf(_duration - 0.28, 0.2)
+	var remaining := maxf(_duration - 1.6, 0.2)
 	var waited := 0.0
 	while waited < remaining:
 		if not _running or token != _token:
@@ -132,10 +138,44 @@ func play(step: Dictionary, character: Character) -> void:
 		waited += 0.05
 		if waited >= _skip_after:
 			_hint.modulate.a = 1.0
-		if character and character.visible == false:
-			pass
 
 	_finish(token)
+
+
+## Walk out of the room, let the caller swap the background, walk back in.
+func _play_walk(step: Dictionary, character: Character, on_midpoint: Callable,
+		token: int) -> void:
+	if character == null:
+		on_midpoint.call_deferred()
+		return
+	var screen := Vector2(1280, 720)
+	var out_right := String(step.get("walk_out", "right")) == "right"
+	var exit_x := 1420.0 if out_right else -140.0
+	var enter_x := -140.0 if out_right else 1420.0
+	var in_pos: Vector2 = _vec(step.get("walk_in_pos", [640, 505]))
+
+	var walk_y := character.position.y
+	if walk_y < 200.0 or walk_y > 700.0:
+		walk_y = 505.0
+
+	# 1. walk to the exit edge
+	await character.walk_to(Vector2(exit_x, walk_y), 1.05)
+	if token != _token:
+		return
+
+	# 2. nobody on screen: swap the room
+	if on_midpoint.is_valid():
+		on_midpoint.call()
+	await get_tree().create_timer(0.12).timeout
+	if token != _token:
+		return
+
+	# 3. come back in from the other side and walk to the spot
+	character.teleport_to(Vector2(enter_x, in_pos.y), character.idle_scale, "stand")
+	await get_tree().create_timer(0.06).timeout
+	if token != _token:
+		return
+	await character.walk_to(in_pos, 1.15)
 
 
 func _play_character_part(step: Dictionary, character: Character, token: int) -> void:

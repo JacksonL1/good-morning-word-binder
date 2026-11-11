@@ -99,6 +99,39 @@ func play_action(audio: Dictionary, action_override: String = "") -> void:
 	_start_idle()
 
 
+## Walk to a screen position with a bobbing gait and a facing flip.
+func walk_to(target: Vector2, duration: float) -> void:
+	_stop_idle()
+	idle_pos = target
+	var direction := signf(target.x - position.x)
+	if direction != 0.0:
+		sprite.flip_h = direction < 0.0
+	var walk_tween := create_tween()
+	walk_tween.set_parallel(true)
+	walk_tween.tween_property(self, "position:x", target.x, duration) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	walk_tween.tween_property(self, "position:y", target.y, duration * 0.6) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	var bob := create_tween().set_loops()
+	bob.tween_property(sprite, "position:y", -9.0, duration * 0.18) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	bob.tween_property(sprite, "position:y", 0.0, duration * 0.18) \
+			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+
+	await walk_tween.finished
+	if bob.is_valid():
+		bob.kill()
+	sprite.position.y = 0.0
+	sprite.flip_h = false
+
+
+## Jump to an off-screen slot without animating (used between rooms).
+func teleport_to(pos: Vector2, new_scale: float, pose: String = "stand") -> void:
+	_stop_idle()
+	_set_pose(pose, pos, new_scale)
+
+
 ## Walk / fade to another pose and screen position (used by cutscenes).
 func show_at(pose: String, pos: Vector2, new_scale: float, duration: float = 0.5) -> void:
 	_stop_idle()

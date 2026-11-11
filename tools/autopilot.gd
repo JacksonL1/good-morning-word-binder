@@ -76,6 +76,7 @@ func _run() -> void:
 		if main.checklist.visible:
 			print("[autopilot] checklist reached")
 			await _wait(0.6)
+			_report_checklist_layout()
 			await _shot("08_checklist")
 			await _complete_checklist()
 			print("[autopilot] checklist done, waiting for finale")
@@ -86,10 +87,28 @@ func _run() -> void:
 			await _wait(0.8)
 			break
 		if main.cutscene.visible:
-			print("[autopilot] cutscene: ", main.current_step.get("id", ""),
-					" room=", main.current_step.get("room", ""))
+			var cstep: Dictionary = main.current_step
+			var cid := String(cstep.get("id", "x"))
+			print("[autopilot] cutscene: ", cid, " room=", cstep.get("room", ""),
+					" walk=", cstep.get("walk", false))
+			if bool(cstep.get("walk", false)):
+				# Sample the character while it walks out, then while it walks in.
+				var samples: Array[String] = []
+				for i in 14:
+					await _wait(0.18)
+					samples.append("%.0f" % main.character.position.x)
+					if i == 4:
+						await _shot("walk_out_%s" % cid)
+				print("[autopilot]   walk x: ", ", ".join(samples))
+				await _shot("walk_in_%s" % cid)
+				var waited := 0.0
+				while main.cutscene.visible and waited < 10.0:
+					await _wait(0.1)
+					waited += 0.1
+				await _wait(0.4)
+				continue
 			await _wait(0.7)
-			await _shot("cut_%s" % String(main.current_step.get("id", "x")))
+			await _shot("cut_%s" % cid)
 			main.cutscene.skip()
 			await _wait(0.6)
 			continue
@@ -208,8 +227,32 @@ func _drag_correct_card(shot_name: String) -> bool:
 	return bool(target.drop_zone.solved)
 
 
+func _report_checklist_layout() -> void:
+	var panel: Rect2 = main.checklist._panel.get_global_rect()
+	var flow: Rect2 = main.checklist._flow.get_global_rect()
+	print("[checklist] panel=", panel, " flow=", flow)
+	var rows: Dictionary = {}
+	var overflow := 0
+	var boxes: Array[Rect2] = []
+	for i in main.checklist.badge_count():
+		var b: Button = main.checklist._buttons[i]
+		var r := Rect2(b.global_position, b.size)
+		boxes.append(r)
+		rows[int(round(r.position.y / 20.0))] = true
+		print("[checklist]   badge ", i, " ", r)
+		if not panel.encloses(r):
+			overflow += 1
+			print("[checklist]   badge ", i, " OUTSIDE panel")
+	for i in boxes.size():
+		for j in range(i + 1, boxes.size()):
+			if boxes[i].intersects(boxes[j]):
+				print("[checklist]   badges overlap: ", i, " & ", j)
+	print("[checklist] badges=", boxes.size(), " rows=", rows.size(),
+			" overflow=", overflow)
+
+
 func _complete_checklist() -> void:
-	var count: int = main.checklist._badges.size()
+	var count: int = main.checklist.badge_count()
 	for i in count:
 		if i == 0:
 			var pos: Vector2 = main.checklist.badge_center(0)

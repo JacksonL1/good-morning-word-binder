@@ -6,27 +6,32 @@
 
 ![开始页](screenshots/01-start.png)
 
-| 卧室：还躺在床上 | 拖对 Wake up：坐起来 |
+| 卧室：躺在床上（侧脸朝上） | 拖对 Wake up：坐起来 |
 | --- | --- |
 | ![躺床](screenshots/02-bedroom-wake.png) | ![起床动作](screenshots/03-wake-action.png) |
 
+| 房间转场：人物走出去 | 转场：从另一侧走回来 |
+| --- | --- |
+| ![走出去](screenshots/04-walk-out.png) | ![走回来](screenshots/05-walk-in.png) |
+
 | 客厅：喝水 | 洗手间：刷牙 |
 | --- | --- |
-| ![喝水](screenshots/05-living-drink.png) | ![刷牙](screenshots/06-bathroom-brush.png) |
+| ![喝水](screenshots/06-living-drink.png) | ![刷牙](screenshots/07-bathroom-brush.png) |
 
 | 视频插入点（cutscene） | 卧室：穿裤子 |
 | --- | --- |
-| ![视频位](screenshots/07-brush-video-slot.png) | ![裤子](screenshots/08-bedroom-pants.png) |
+| ![视频位](screenshots/08-brush-video.png) | ![裤子](screenshots/09-bedroom-pants.png) |
 
-| 玄关：左右脚配对 | 出门检查清单 |
+| 玄关：左右脚配对 | 出门检查清单（自动换行布局） |
 | --- | --- |
-| ![穿鞋](screenshots/09-entrance-shoes.png) | ![清单](screenshots/10-checklist.png) |
+| ![穿鞋](screenshots/10-entrance-shoes.png) | ![清单](screenshots/11-checklist.png) |
 
-| 转场动画 | 完成页 |
+| 完成页 | 10 秒无操作：幽灵小手 |
 | --- | --- |
-| ![转场](screenshots/04-walk-cutscene.png) | ![完成](screenshots/11-finale.png) |
+| ![完成](screenshots/12-finale.png) | ![提示](screenshots/13-ghost-hint.png) |
 
 > 引擎：Godot **4.3**（GDScript，GL Compatibility 渲染，1280×720 横屏）
+> **游戏内全部为英文**（UI、字幕、语音、数据文件），无中文字符。
 > 数据驱动：关卡 `data/game.json` + `data/levels/*.json`，房间 `data/rooms.json`，清单 `data/checklist.json`。
 
 ---
@@ -167,12 +172,41 @@ data/checklist.json                门前清单
 | --- | --- | --- |
 | `drag` | 拖一张卡片到道具 | `prop{img,pos,scale}`、`req_card`、`cards[]`、`action`、`char`、`audio` |
 | `pair` | 多个道具各自匹配（左右鞋） | `props[{img,pos,scale,req_card}]`、`cards[]` |
-| `cutscene` | **插入动画 / 视频** | `video`、`poses`、`character_action`、`duration`、`vo`、`caption`、`skip_after` |
+| `cutscene` | **插入动画 / 视频 / 房间转场** | `video`、`poses`、`character_action`、`walk`、`walk_out`、`walk_in_pos`、`duration`、`vo`、`caption`、`skip_after` |
 | `checklist` | 出门前徽章自检 | 读取 `data/checklist.json` |
 
-每个 step 还可以带 `room`——进入时自动切换背景与环境音（带 0.32 秒转场）。
+每个 step 还可以带 `room`——进入时自动切换背景与环境音（带 0.32 秒淡入转场）。
 
-### 3.2 插入动画 / 视频（你说过的刷牙视频、穿衣视频）
+### 3.2 房间转场：人物走出去、再从另一侧走回来
+
+`cutscene` 加上 `walk` 就会播放走路转场：
+
+```json
+{
+  "id": "goto_living", "type": "cutscene", "room": "living",
+  "title": "To the living room", "vo": "res://assets/audio/vo/vo_goto_living.mp3",
+  "caption": "Let's go to the living room!",
+  "duration": 3.4,
+  "walk": true,
+  "walk_out": "right",
+  "walk_in_pos": [420, 505]
+}
+```
+
+执行顺序：
+
+1. 小人从当前位置**走到屏幕右侧**（带上下起伏步态 + 朝向翻转）；
+2. 人物完全出画后，**在老背景上换成新房间的背景与环境音**（`_on_cutscene_midpoint`）；
+3. 小人**从左侧重新走进来**，走到 `walk_in_pos`；
+4. 播 `vo` / 字幕，`duration` 到点（或点击）进入下一步。
+
+`walk_out` 可以是 `"right"` 或 `"left"`，人物会从相反方向走回。实测位移（goto_living）：
+
+```text
+x: 930 → 1420（走出右侧） → -137（从左侧出现） → 420（走到位）
+```
+
+### 3.3 插入动画 / 视频（刷牙视频、穿衣视频）
 
 `cutscene` 按优先级取素材：
 
@@ -191,11 +225,11 @@ data/checklist.json                门前清单
  "character_action": "brush"}
 ```
 
-孩子点一下屏幕就能跳过；`skip_after` 秒后出现“点击继续”提示。
+孩子点一下屏幕就能跳过；`skip_after` 秒后出现 “Tap to continue” 提示。
 
 > Godot 4.3 的 `VideoStreamPlayer` 原生只播 **OGV/Theora**；MP4 需要 WebM/OGV 转换，或装插件。把视频转成 `.ogv` 最省事（`ffmpeg -i in.mp4 -c:v libtheora -c:a libvorbis out.ogv`），文件名写进 `video` 即可。
 
-### 3.3 新增一关
+### 3.4 新增一关
 
 1. 在 `data/levels/` 下复制一个关卡文件，改 `id` / `title` / `steps`；
 2. 在 `data/game.json` 的 `levels` 数组里加上路径；
@@ -203,7 +237,7 @@ data/checklist.json                门前清单
 
 不需要改任何 GDScript。加载时会校验：未知步骤类型、缺 `req_card`、缺 `cards`、pair 少于两个道具、未知房间——都会打印错误并跳过该步，不会崩。
 
-### 3.4 字段速查
+### 3.5 字段速查
 
 | 字段 | 说明 |
 | --- | --- |
@@ -230,7 +264,7 @@ data/checklist.json                门前清单
 | 数据加载与校验 | `core/level_data.gd` | 读 `game.json` → 每个关卡文件 → 清洗步骤，坏数据跳过 |
 | 插入动画 / 视频 | `core/cutscene.gd` + `scenes/Cutscene.tscn` | video → poses → character_action 三级回退；点击跳过；字幕气泡 |
 | 小人动画 | `core/character.gd` | 11 个姿态 + Tween 序列：躺→坐→站、举杯、左右刷牙、擦脸、穿衣、穿裤、穿鞋 |
-| 门前清单 | `core/checklist.gd` | 6 个徽章、独立 10s 提示、逐条语音、全部打勾后 High-five + 完成页 |
+| 门前清单 | `core/checklist.gd` | 6 个徽章，`HFlowContainer` **自动换行**布局；独立 10s 提示、逐条语音、全部打勾后 High-five + 完成页 |
 | 4 层架构 | `assets/` `data/` `scenes/` `core/` | 代码不含任何具体单词或关卡 |
 
 其他细节：
@@ -319,22 +353,24 @@ python tools/check_character.py
 `tools/autopilot.gd` 会用 `Input.parse_input_event` 合成完整的按下—移动—释放流程，并按窗口缩放换算坐标，因此 Godot 原生拖放链路（`_get_drag_data` → `_can_drop_data` → `_drop_data`）在每次自测中都会被真实验证，而不是只调用内部方法。
 
 最近一次验收结果：
-- `levels: 1  rooms: 4`，`checked: 143 errors: 0`（1 条预期 WARN：刷牙视频文件尚未提供，自动回退到姿态动画）
+- `levels: 1  rooms: 4`，`checked: 135 errors: 0`（1 条预期 WARN：刷牙视频文件尚未提供，自动回退到姿态动画）
 - 完整 13 步走通：卧室 → 客厅 → 洗手间 → 卧室 → 玄关 → 清单 → 完成页
+- 房间转场走路实测（goto_living）：`x: 930 → 1420 → -137 → 420`（走出右侧 → 换背景 → 从左侧走回）
 - 真实鼠标拖拽成功（`[drag] dragging=true` 数据正确）
-- 房间切换验证：4 个房间截图平均色各不相同，客厅有沙发（teal 1916px）、玄关有木门（3680px）、洗手间有瓷砖（32509px）
-- 小人几何自检：站立类姿态 `slivers=0`（无第二肩膀）、裤色像素在腰部以下 92 行、躺姿头身重叠 74px
-- 门前清单 6 个徽章全部打勾 → `finale=true`；“再玩一次”回到第 1 步
+- 房间确实换了：4 个房间截图平均色各不相同，客厅有沙发（teal 1916px）、玄关有木门（3680px）、洗手间有瓷砖（32509px）
+- 小人几何自检 0 问题：站立 `slivers=0`（无第二肩膀）、裤子像素在腰下 92 行、躺姿**侧脸朝上**（头发重心在头心下方 33px、鼻子上方 79px 肤色）
+- 清单布局实测：panel `1076×426` 居中，6 个徽章**一行放下**（`rows=1 overflow=0`），再增加会自动换行
+- 门前清单 6 个徽章全部打勾 → `finale=true`；"再玩一次"回到第 1 步
 
 ---
 
 ## 七、已知边界 / 下一步
 
-- **字体授权**：当前字体为 Windows 自带 `comic.ttf`（Comic Sans MS）与 `deng.ttf`（等线），仅适合本机开发；**对外发布前请替换为 OFL 字体**（如 Fredoka / Comic Neue + 站酷快乐体 / Noto Sans SC），并更新 `assets/ui/kid_theme.tres`。
+- **字体授权**：当前只保留 `assets/fonts/comic.ttf`（Comic Sans MS，Windows 自带），用于英文 UI；中文字体 `deng.ttf` 已随本次"去中文"移除。**对外发布前请替换为 OFL 字体**（如 Fredoka / Comic Neue），并更新 `assets/ui/kid_theme.tres`。
 - 美术为程序化占位图，风格统一但精细度低于 AI 生图；直接替换同名资产即可。
 - **小人动画是“姿态切换 + Tween”**（11 张 512×512 姿态图），不是骨骼动画；替换时保持站立姿态脚底在 y≈468、身体居中。需要骨骼/逐帧动画时可把 `Character.tscn` 换成 `AnimatedSprite2D`，数据字段和导演逻辑可保留。
 - **视频**：`cutscene` 已支持 `video` 字段，但 Godot 4.3 原生只播 OGV/Theora；MP4 需先转 `.ogv`（`ffmpeg -i in.mp4 -c:v libtheora -c:a libvorbis out.ogv`）。文件缺失时自动回退到 `poses` 姿态动画，不会崩。
-- 门前清单是独立的 6 徽章点击关，不复用拖拽判定；语音/图标都在 `data/checklist.json`。
+- 门前清单是独立的 6 徽章点击关，不复用拖拽判定；语音/图标都在 `data/checklist.json`，徽章数量可随意增减（自动换行）。
 - 目前是单机单会话：无存档、无家长门、无难度分级、无麦克风跟读评分。
 - 音频共 60 条 VO + 10 个 SFX + BGM + 2 条环境音；语音合成适合 MVP，正式版建议母语儿童配音演员录制并做响度标准化。
 - 尚未提供导出模板；安装 Godot Export Templates 后可在 `Project → Export` 直接导出 Windows / Android。

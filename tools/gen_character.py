@@ -417,31 +417,61 @@ def pose_shoes() -> Image.Image:
     return img
 
 
+def draw_head_profile_up(d, cx, cy, r=62):
+    """Head seen from the side, lying on the back: the face points UP (towards
+    the ceiling), so the nose is at the top, the forehead to the LEFT (towards
+    the head of the bed) and the chin towards the RIGHT (towards the feet).
+    Hair covers the back of the skull, i.e. the lower half resting on the pillow.
+    """
+    # skull
+    ell(d, cx, cy, r, r, fill=SKIN, outline=INK, width=4)
+    # back of the skull / hair: lower + left part of the circle
+    poly(d, [(cx - r + 2, cy - 6), (cx - r + 8, cy + 34), (cx - 20, cy + r - 2),
+             (cx + 26, cy + r - 4), (cx + 52, cy + 30), (cx + 46, cy + 6),
+             (cx + 20, cy + 16), (cx - 14, cy + 18), (cx - 40, cy + 6)],
+         fill=HAIR, outline=INK, width=3)
+    # a couple of hair strands
+    line(d, [(cx - 34, cy + 34), (cx + 4, cy + 44)], (138, 98, 80, 255), 3)
+    line(d, [(cx - 40, cy + 16), (cx - 4, cy + 24)], (138, 98, 80, 255), 3)
+    # ear (side of the head, slightly towards the feet side)
+    ell(d, cx + 26, cy + 2, 13, 17, fill=SKIN, outline=INK, width=3)
+    arc(d, (cx + 20, cy - 6, cx + 32, cy + 10), 40, 200, INK, 2)
+    # nose pointing up
+    poly(d, [(cx - 14, cy - 52), (cx - 20, cy - 74), (cx + 4, cy - 58)],
+         fill=SKIN, outline=INK, width=3)
+    # closed eye
+    arc(d, (cx - 44, cy - 48, cx - 18, cy - 26), 200, 340, INK, 4)
+    # mouth / chin line, towards the feet side
+    arc(d, (cx + 16, cy - 46, cx + 38, cy - 24), 20, 150, INK, 3)
+    # blush
+    ell(d, cx - 30, cy - 16, 12, 7, fill=(255, 168, 156, 120))
+    # ear-side highlight
+    ell(d, cx + 50, cy - 20, 8, 5, fill=(255, 168, 156, 90))
+
+
 def pose_lying() -> Image.Image:
-    """On his back in bed: head at the left end of ONE continuous body block,
-    so the head can never look detached from the torso."""
+    """On his back in bed: ONE continuous body block with a side-profile head
+    whose face points up, so it never reads as a face stuck on a lying body."""
     img = canvas()
     d = ImageDraw.Draw(img)
-    # head sits lower on the pillow
-    head_x, head_y = 158, 256
+    head_x, head_y = 150, 262
     # torso block starts UNDER the head, so the join is solid
-    rrect(d, (150, 214, 374, 306), 40, fill=PJ, outline=INK, width=5)
-    # a soft collar/shoulder line hint
-    line(d, [(214, 226), (214, 294)], (150, 205, 225, 255), 3)
+    rrect(d, (146, 220, 374, 310), 40, fill=PJ, outline=INK, width=5)
+    line(d, [(214, 232), (214, 298)], (150, 205, 225, 255), 3)
     # long pajama pants, legs to the right
-    rrect(d, (346, 220, 398, 300), 16, fill=PANTS, outline=INK, width=4)
-    capsule_outlined(d, 386, 260, 446, 260, 24, PANTS)
-    rrect(d, (430, 234, 462, 286), 12, fill=PANTS_D, outline=INK, width=3)
-    # bare feet poking out
-    ell(d, 470, 260, 18, 24, fill=SKIN, outline=INK, width=4)
+    rrect(d, (346, 226, 398, 304), 16, fill=PANTS, outline=INK, width=4)
+    capsule_outlined(d, 386, 266, 446, 266, 24, PANTS)
+    rrect(d, (430, 240, 462, 292), 12, fill=PANTS_D, outline=INK, width=3)
+    # bare feet
+    ell(d, 470, 266, 18, 24, fill=SKIN, outline=INK, width=4)
     # arm resting along the blanket
-    capsule_outlined(d, 252, 298, 332, 322, 14, SKIN)
-    ell(d, 340, 324, 14, 14, fill=SKIN, outline=INK, width=4)
+    capsule_outlined(d, 252, 302, 332, 326, 14, SKIN)
+    ell(d, 340, 328, 14, 14, fill=SKIN, outline=INK, width=4)
     # blanket edge over the hips
-    rrect(d, (312, 290, 424, 316), 10, fill=TEAL, outline=TEAL_D, width=3)
-    # head last -> overlaps the torso block, no visible seam
-    draw_head(d, head_x, head_y, eyes="closed", mouth="sleep", neck=False)
-    for (x, y, s) in [(214, 152, 9), (236, 130, 7), (254, 112, 5)]:
+    rrect(d, (312, 294, 424, 320), 10, fill=TEAL, outline=TEAL_D, width=3)
+    # profile head, drawn last so it sits on top of the torso
+    draw_head_profile_up(d, head_x, head_y)
+    for (x, y, s) in [(214, 156, 9), (236, 134, 7), (254, 116, 5)]:
         sparkle(d, x, y, s, (255, 255, 255, 200))
     return img
 

@@ -33,12 +33,12 @@ func show_hint(card: WordCard) -> void:
 	)
 	target.x = clampf(target.x, 8.0, VIEWPORT.x - size.x - 8.0)
 	target.y = clampf(target.y, 8.0, VIEWPORT.y - size.y - 8.0)
-	show_at(target, "拖到道具上!")
+	show_at(target, "Drag it here!")
 
 
 func show_at(target: Vector2, message: String = "") -> void:
 	_kill_tweens()
-	hint_label.text = message if not message.is_empty() else "拖这张卡片!"
+	hint_label.text = message if not message.is_empty() else "Drag this card!"
 	position = target + Vector2(0, 26)
 	modulate.a = 0.0
 	visible = true

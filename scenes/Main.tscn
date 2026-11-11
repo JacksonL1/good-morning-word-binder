@@ -64,24 +64,15 @@ mouse_filter = 2
 [node name="TitleLabel" type="Label" parent="UI/TopBar/TitlePill"]
 unique_name_in_owner = true
 offset_left = 22.0
-offset_top = 6.0
+offset_top = 8.0
 offset_right = 298.0
-offset_bottom = 34.0
-mouse_filter = 2
-theme_override_colors/font_color = Color(0.42, 0.36, 0.5, 0.75)
-theme_override_font_sizes/font_size = 20
-text = "起床"
-
-[node name="TitleEn" type="Label" parent="UI/TopBar/TitlePill"]
-unique_name_in_owner = true
-offset_left = 22.0
-offset_top = 32.0
-offset_right = 298.0
-offset_bottom = 86.0
+offset_bottom = 78.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.29, 0.29, 0.42, 1)
-theme_override_font_sizes/font_size = 40
+theme_override_font_sizes/font_size = 32
 text = "Wake up"
+horizontal_alignment = 1
+vertical_alignment = 1
 
 [node name="HintPill" type="Panel" parent="UI/TopBar"]
 unique_name_in_owner = true
@@ -100,7 +91,7 @@ offset_bottom = 76.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.29, 0.29, 0.42, 1)
 theme_override_font_sizes/font_size = 24
-text = "把 Wake up 卡片拖到床上"
+text = "Drag Wake up onto the bed"
 horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
@@ -191,7 +182,7 @@ offset_bottom = 204.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.42, 0.36, 0.5, 0.85)
 theme_override_font_sizes/font_size = 26
-text = "魔法单词本 · 拖一拖，说一说"
+text = "Magic Word Binder · drag it and say it"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -211,7 +202,7 @@ offset_left = 280.0
 offset_top = 330.0
 offset_right = 580.0
 offset_bottom = 414.0
-text = "PLAY  开始游戏"
+text = "PLAY"
 
 [node name="StartNote" type="Label" parent="OverlayLayer/StartOverlay/StartCard"]
 offset_left = 60.0
@@ -221,7 +212,7 @@ offset_bottom = 482.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.42, 0.36, 0.5, 0.55)
 theme_override_font_sizes/font_size = 18
-text = "4–6 岁 · 把单词卡片拖到道具上"
+text = "Ages 4-6 · drag the word card onto the object"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -284,7 +275,7 @@ offset_bottom = 254.0
 mouse_filter = 2
 theme_override_colors/font_color = Color(0.42, 0.36, 0.5, 0.85)
 theme_override_font_sizes/font_size = 26
-text = "检查完毕，出发去学校！"
+text = "Ready for school!"
 horizontal_alignment = 1
 vertical_alignment = 1
 
@@ -294,7 +285,7 @@ offset_left = 230.0
 offset_top = 300.0
 offset_right = 530.0
 offset_bottom = 384.0
-text = "再玩一次"
+text = "Play again"
 
 [node name="FinaleNote" type="Label" parent="OverlayLayer/FinaleOverlay/FinaleCard"]
 offset_left = 40.0

@@ -37,7 +37,6 @@ const SOUND_OFF_TEXTURE := "res://assets/ui/sound_off.png"
 
 @onready var title_pill: Panel = %TitlePill
 @onready var title_label: Label = %TitleLabel
-@onready var title_en: Label = %TitleEn
 @onready var hint_pill: Panel = %HintPill
 @onready var hint_label: Label = %HintLabel
 @onready var progress: HBoxContainer = %Progress
@@ -96,9 +95,8 @@ func _ready() -> void:
 	ghost.hide_hand()
 
 	if levels.is_empty():
-		title_label.text = "缺少剧本"
-		title_en.text = "Story not found"
-		hint_label.text = "请检查 data/game.json"
+		title_label.text = "Story not found"
+		hint_label.text = "Check data/game.json"
 		push_error("No levels loaded; game cannot start.")
 		return
 
@@ -229,7 +227,7 @@ func _load_level(index: int) -> void:
 
 func _title_level(level: Dictionary) -> void:
 	if title_label:
-		title_label.text = String(level.get("title_cn", level.get("title", "")))
+		title_label.text = String(level.get("title", ""))
 
 
 func _goto_step(index: int) -> void:
@@ -245,16 +243,16 @@ func _goto_step(index: int) -> void:
 	_clear_props()
 	_solved = 0
 
+	var kind := String(current_step.get("type", "drag"))
+	var walks_in := kind == "cutscene" and bool(current_step.get("walk", false))
 	var room_id := String(current_step.get("room", ""))
-	if room_id != "" and room_id != current_room:
+	if not walks_in and room_id != "" and room_id != current_room:
 		current_room = room_id
 		_apply_room(room_id)
 
-	title_label.text = String(current_step.get("title", levels[level_index].get("title", "")))
-	title_en.text = String(current_step.get("title_en", ""))
+	title_label.text = String(current_step.get("title", ""))
 	_update_stars(_global_step_offset() + index)
 
-	var kind := String(current_step.get("type", "drag"))
 	if kind == "cutscene":
 		_run_cutscene()
 	elif kind == "checklist":
@@ -280,7 +278,7 @@ func _apply_room(room_id: String) -> void:
 	Audio.play_ambience(String(room.get("ambience", "")))
 	var label := String(room.get("name", ""))
 	if not label.is_empty():
-		hint_label.text = "📍 " + label
+		hint_label.text = label
 
 
 # ------------------------------------------------------------- step: drag ---
@@ -338,9 +336,18 @@ func _run_cutscene() -> void:
 	idle_timer.stop()
 	ghost.hide_hand()
 	character.visible = true
-	character.setup(current_step)
 	hint_label.text = ""
-	cutscene.play(current_step, character)
+	if not bool(current_step.get("walk", false)):
+		character.setup(current_step)
+	cutscene.play(current_step, character, _on_cutscene_midpoint)
+
+
+## Called while the character is off-screen: swap in the next room.
+func _on_cutscene_midpoint() -> void:
+	var room_id := String(current_step.get("room", ""))
+	if room_id != "" and room_id != current_room:
+		current_room = room_id
+		_apply_room(room_id)
 
 
 func _on_cutscene_finished() -> void:
@@ -461,7 +468,7 @@ func _on_prop_matched(_card_id: String) -> void:
 	if not _all_solved():
 		Audio.play_sfx("tap")
 		_reset_idle()
-		hint_label.text = "再找一找！One more!"
+		hint_label.text = "One more!"
 		return
 
 	busy = true
@@ -470,7 +477,7 @@ func _on_prop_matched(_card_id: String) -> void:
 	binder.set_locked(true)
 
 	_update_stars(_global_step_offset() + step_index + 1)
-	hint_label.text = "太棒了！Great job!"
+	hint_label.text = "Great job!"
 
 	var token := _token
 	var audio: Dictionary = current_step.get("audio", {})
@@ -496,7 +503,7 @@ func _on_prop_mismatched(_card_id: String) -> void:
 	var wrong := String(audio.get("wrong", VO_TRY_AGAIN))
 	Audio.play_vo(wrong if not wrong.is_empty() else VO_TRY_AGAIN)
 	character.play_wince()
-	hint_label.text = "再试一次吧！Try again!"
+	hint_label.text = "Try again!"
 	_reset_idle()
 
 

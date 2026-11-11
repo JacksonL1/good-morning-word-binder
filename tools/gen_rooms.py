@@ -1,12 +1,12 @@
 """Generate the extra rooms, clothing and shoe props for the staged story.
 
 New this round:
-  assets/bgs/bg_living.png       客厅
-  assets/bgs/bg_entrance.png     玄关
-  assets/props/prop_pants.png    裤子
-  assets/props/prop_shoe_l.png   左脚鞋（朝右）
-  assets/props/prop_shoe_r.png   右脚鞋（朝左）
-  assets/props/icon_pants.png    卡片图标
+  assets/bgs/bg_living.png       living room
+  assets/bgs/bg_entrance.png     entrance
+  assets/props/prop_pants.png    pants
+  assets/props/prop_shoe_l.png   left shoe (faces right)
+  assets/props/prop_shoe_r.png   right shoe (faces left)
+  assets/props/icon_pants.png    card icon
   assets/props/icon_shoe_l.png
   assets/props/icon_shoe_r.png
 

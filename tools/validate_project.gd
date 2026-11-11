@@ -105,11 +105,11 @@ func _init() -> void:
 		_fail("kid theme/font missing")
 	else:
 		var font := theme.default_font
-		print("theme font fallbacks=", font.fallbacks.size(),
-				" 把=", font.has_char("把".unicode_at(0)),
-				" A=", font.has_char(65))
-		if not font.has_char("把".unicode_at(0)):
-			_fail("theme font cannot render Chinese")
+		print("theme font: A=", font.has_char(65), " a=", font.has_char(97))
+		if not font.has_char(65):
+			_fail("theme font cannot render latin text")
+		if font.has_char("把".unicode_at(0)):
+			_warn("theme font still contains CJK glyphs; the game UI is English only")
 
 	print("checked: ", checked, " errors: ", errors, " warnings: ", warnings)
 	quit(1 if errors > 0 else 0)

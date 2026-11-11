@@ -1,15 +1,15 @@
 class_name Checklist
 extends CanvasLayer
 
-## Act 6: the door checklist. Five badges must be tapped before going to
-## school. Uses its own 10-second hint timer and plays the act-6 voice lines.
+## The door checklist. Badges are laid out in a wrapping flow container, so any
+## number of badges fits without overflowing the panel: if a row is full the
+## next badge simply wraps to a new row and the panel grows with it.
 ##
 ## Data: data/checklist.json (badges, labels, voice paths).
 
 signal completed
 
 const DATA_PATH := "res://data/checklist.json"
-const DESIGN := Vector2(1280, 720)
 
 var _data: Dictionary = {}
 var _badges: Array = []
@@ -18,6 +18,8 @@ var _checks: Array[TextureRect] = []
 var _done: Array[bool] = []
 var _timer: Timer
 var _root: Control
+var _panel: Panel
+var _flow: HFlowContainer
 var _progress: Label
 var _pulse_tween: Tween
 var _busy := false
@@ -54,6 +56,7 @@ func open() -> void:
 		_buttons[i].scale = Vector2.ONE
 	_update_cards()
 	_update_progress()
+	_relayout()
 	Audio.play_vo(String(_data.get("intro_vo", "")))
 	_start_timer()
 	_pulse_next()
@@ -89,61 +92,51 @@ func _build() -> void:
 	dim.color = Color(1.0, 0.96, 0.88, 0.94)
 	_root.add_child(dim)
 
-	var panel := Panel.new()
-	panel.position = Vector2(50, 40)
-	panel.size = Vector2(1180, 640)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	UiKit.style_panel(panel, Color(1, 0.99, 0.96, 1.0), 44,
+	_panel = Panel.new()
+	_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	UiKit.style_panel(_panel, Color(1, 0.99, 0.96, 1.0), 44,
 			Color(1, 1, 1, 0.9), 3, true, Color(0.42, 0.32, 0.24, 0.22), 20)
-	_root.add_child(panel)
+	_root.add_child(_panel)
 
 	var title := Label.new()
 	title.text = String(_data.get("title", "Morning Checklist"))
-	title.position = Vector2(80, 62)
-	title.size = Vector2(700, 64)
-	title.add_theme_font_size_override("font_size", 48)
+	title.position = Vector2(56, 34)
+	title.add_theme_font_size_override("font_size", 44)
 	title.add_theme_color_override("font_color", Color("#ff8a80"))
 	title.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_root.add_child(title)
+	_panel.add_child(title)
 
 	var subtitle := Label.new()
-	subtitle.text = String(_data.get("subtitle", "出门前检查清单"))
-	subtitle.position = Vector2(82, 128)
-	subtitle.size = Vector2(700, 34)
-	subtitle.add_theme_font_size_override("font_size", 22)
+	subtitle.text = String(_data.get("subtitle", "Tap each badge to check!"))
+	subtitle.position = Vector2(58, 88)
+	subtitle.add_theme_font_size_override("font_size", 20)
 	subtitle.add_theme_color_override("font_color", Color(0.42, 0.36, 0.5, 0.85))
 	subtitle.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_root.add_child(subtitle)
+	_panel.add_child(subtitle)
 
 	_progress = Label.new()
-	_progress.position = Vector2(900, 68)
-	_progress.size = Vector2(260, 60)
 	_progress.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	_progress.add_theme_font_size_override("font_size", 34)
+	_progress.add_theme_font_size_override("font_size", 30)
 	_progress.add_theme_color_override("font_color", UiKit.INK)
 	_progress.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_root.add_child(_progress)
+	_panel.add_child(_progress)
 
-	# cheering character
-	var kid := TextureRect.new()
-	kid.position = Vector2(86, 222)
-	kid.size = Vector2(220, 300)
-	kid.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	kid.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	kid.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var kid_path := "res://assets/char/char_happy.png"
-	if ResourceLoader.exists(kid_path):
-		kid.texture = load(kid_path)
-	_root.add_child(kid)
+	# Badges wrap automatically instead of being squeezed into one row.
+	_flow = HFlowContainer.new()
+	_flow.add_theme_constant_override("h_separation", 16)
+	_flow.add_theme_constant_override("v_separation", 16)
+	_flow.alignment = FlowContainer.ALIGNMENT_CENTER
+	_flow.mouse_filter = Control.MOUSE_FILTER_PASS
+	_panel.add_child(_flow)
 
 	var hint := Label.new()
-	hint.text = "Tap each badge to check!"
-	hint.position = Vector2(86, 520)
-	hint.size = Vector2(860, 34)
-	hint.add_theme_font_size_override("font_size", 20)
+	hint.name = "Hint"
+	hint.text = "All six done, then off to school!"
+	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	hint.add_theme_font_size_override("font_size", 18)
 	hint.add_theme_color_override("font_color", Color(0.42, 0.36, 0.5, 0.55))
 	hint.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_root.add_child(hint)
+	_panel.add_child(hint)
 
 	_normal_style = UiKit.make_style(Color.WHITE, 26, Color("#b7d9ee"), 3, true,
 			Color(0.35, 0.30, 0.45, 0.14), 8, Vector2(0, 4), Vector4(0, 0, 0, 0))
@@ -156,32 +149,13 @@ func _build() -> void:
 	_pressed_style = UiKit.make_style(Color(0.95, 0.94, 0.98), 26, Color("#b7d9ee"), 3,
 			false, Color(0, 0, 0, 0), 0, Vector2.ZERO, Vector4(0, 0, 0, 0))
 
-	var box := HBoxContainer.new()
-	box.position = Vector2(340, 206)
-	box.size = Vector2(820, 250)
-	box.alignment = BoxContainer.ALIGNMENT_CENTER
-	box.add_theme_constant_override("separation", 14)
-	box.mouse_filter = Control.MOUSE_FILTER_PASS
-	_root.add_child(box)
-
 	for i in _badges.size():
-		box.add_child(_make_badge(i, _badges[i]))
-
-	var footer := Label.new()
-	footer.text = "5 badges · then off to school!"
-	footer.position = Vector2(340, 566)
-	footer.size = Vector2(820, 34)
-	footer.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	footer.add_theme_font_size_override("font_size", 20)
-	footer.add_theme_color_override("font_color", Color(0.42, 0.36, 0.5, 0.55))
-	footer.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	_root.add_child(footer)
+		_flow.add_child(_make_badge(i, _badges[i]))
 
 
 func _make_badge(index: int, info: Dictionary) -> Button:
 	var button := Button.new()
-	button.custom_minimum_size = Vector2(150, 232)
-	button.size = Vector2(150, 232)
+	button.custom_minimum_size = Vector2(150, 210)
 	button.focus_mode = Control.FOCUS_NONE
 	button.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
 	button.add_theme_stylebox_override("normal", _normal_style)
@@ -192,7 +166,7 @@ func _make_badge(index: int, info: Dictionary) -> Button:
 	_buttons.append(button)
 
 	var icon := TextureRect.new()
-	icon.position = Vector2(39, 18)
+	icon.position = Vector2(39, 22)
 	icon.size = Vector2(72, 72)
 	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
@@ -204,27 +178,17 @@ func _make_badge(index: int, info: Dictionary) -> Button:
 
 	var en := Label.new()
 	en.text = String(info.get("label", ""))
-	en.position = Vector2(10, 106)
-	en.size = Vector2(130, 30)
+	en.position = Vector2(6, 112)
+	en.size = Vector2(138, 34)
 	en.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	en.add_theme_font_size_override("font_size", 24)
+	en.add_theme_font_size_override("font_size", 22)
 	en.add_theme_color_override("font_color", UiKit.INK)
 	en.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	button.add_child(en)
 
-	var cn := Label.new()
-	cn.text = String(info.get("cn", ""))
-	cn.position = Vector2(10, 140)
-	cn.size = Vector2(130, 26)
-	cn.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	cn.add_theme_font_size_override("font_size", 17)
-	cn.add_theme_color_override("font_color", Color(0.42, 0.36, 0.5, 0.7))
-	cn.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	button.add_child(cn)
-
 	var check := TextureRect.new()
-	check.position = Vector2(108, 8)
-	check.size = Vector2(34, 34)
+	check.position = Vector2(112, 10)
+	check.size = Vector2(30, 30)
 	check.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	check.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	check.texture = load("res://assets/ui/star.png") if ResourceLoader.exists("res://assets/ui/star.png") else null
@@ -234,6 +198,44 @@ func _make_badge(index: int, info: Dictionary) -> Button:
 	_checks.append(check)
 
 	return button
+
+
+## Sizes the panel to the actual badge grid and centres it on screen.
+## Badges wrap onto extra rows instead of being squeezed into one line.
+func _relayout() -> void:
+	if _panel == null or _buttons.is_empty():
+		return
+	var viewport := Vector2(1280, 720)
+	var hsep := 16.0
+	var vsep := 16.0
+	var badge_w: float = _buttons[0].custom_minimum_size.x
+	var badge_h: float = _buttons[0].custom_minimum_size.y
+	var max_flow := viewport.x - 100.0 - 96.0
+	var count := _buttons.size()
+
+	var per_row := int(floor((max_flow + hsep) / (badge_w + hsep)))
+	per_row = clampi(per_row, 1, count)
+	var rows := int(ceil(float(count) / float(per_row)))
+	var flow_w := per_row * badge_w + (per_row - 1) * hsep
+	var flow_h := rows * badge_h + (rows - 1) * vsep
+
+	_flow.add_theme_constant_override("h_separation", int(hsep))
+	_flow.add_theme_constant_override("v_separation", int(vsep))
+	_flow.custom_minimum_size = Vector2(flow_w, flow_h)
+	_flow.size = Vector2(flow_w, flow_h)
+	_flow.position = Vector2(48, 138)
+
+	var panel_w: float = maxf(flow_w + 96.0, 620.0)
+	var panel_h: float = 138.0 + flow_h + 78.0
+	_panel.size = Vector2(panel_w, panel_h)
+	_panel.position = (viewport - _panel.size) * 0.5
+
+	_progress.size = Vector2(180, 40)
+	_progress.position = Vector2(panel_w - 216, 40)
+	var hint := _panel.get_node_or_null("Hint") as Label
+	if hint:
+		hint.position = Vector2(24, panel_h - 54)
+		hint.size = Vector2(panel_w - 48, 30)
 
 
 # --------------------------------------------------------------- behaviour ---
@@ -287,6 +289,14 @@ func _update_progress() -> void:
 	_progress.text = "%d / %d" % [_done_count(), _done.size()]
 
 
+func _done_count() -> int:
+	var count := 0
+	for done in _done:
+		if done:
+			count += 1
+	return count
+
+
 func completed_count() -> int:
 	return _done_count()
 
@@ -297,12 +307,8 @@ func badge_center(index: int) -> Vector2:
 	return _buttons[index].get_global_rect().get_center()
 
 
-func _done_count() -> int:
-	var count := 0
-	for done in _done:
-		if done:
-			count += 1
-	return count
+func badge_count() -> int:
+	return _buttons.size()
 
 
 func _pulse_next() -> void:

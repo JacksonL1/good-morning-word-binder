@@ -95,24 +95,49 @@ def main() -> int:
               f"shirt_rows={len(shirt_rows)} waist_cover={len(waist_cover)} "
               f"bbox={img.getbbox()}")
 
-    # lying: the head must overlap the torso block
+    # lying: head must overlap the torso, and the head must be a SIDE profile
+    # with the face pointing up (a front-facing face on a horizontal body is
+    # exactly the "creepy" look we are avoiding).
     img = load("lying")
     px = img.load()
     w, h = img.size
-    hair_max = 0
-    for y in range(h):
-        for x in range(w - 1, -1, -1):
+    hair_pts = []
+    for y in range(0, 400):
+        for x in range(0, 340):
             r, g, b, a = px[x, y]
             if a > 200 and all(abs((r, g, b)[i] - HAIR[i]) <= 12 for i in range(3)):
-                hair_max = max(hair_max, x)
-                break
-    print(f"lying: rightmost hair x={hair_max}, torso starts at x=150 "
-          f"-> overlap={hair_max - 150}px")
-    if hair_max - 150 < 20:
+                hair_pts.append((x, y))
+    hair_max_x = max((p[0] for p in hair_pts), default=0)
+    hair_cy = sum(p[1] for p in hair_pts) / max(len(hair_pts), 1)
+    head_cy = 262.0
+    print(f"lying: rightmost hair x={hair_max_x}, torso starts at x=146 "
+          f"-> overlap={hair_max_x - 146}px")
+    print(f"lying: hair centroid y={hair_cy:.0f} vs head centre y={head_cy:.0f} "
+          f"(hair must sit BELOW centre = back of skull on the pillow)")
+    if hair_max_x - 146 < 20:
         print("FAIL lying: head does not overlap torso")
         problems += 1
     else:
         print("OK  lying: head and torso overlap")
+    if hair_cy < head_cy + 4:
+        print("FAIL lying: hair is not on the back of the head (face still front-on)")
+        problems += 1
+    else:
+        print("OK  lying: profile head, hair on the pillow side")
+
+    # nose must point up: skin pixels near the TOP of the head circle
+    nose_band = 0
+    for y in range(int(head_cy) - 80, int(head_cy) - 58):
+        for x in range(100, 200):
+            r, g, b, a = px[x, y]
+            if a > 200 and all(abs((r, g, b)[i] - SKIN[i]) <= 12 for i in range(3)):
+                nose_band += 1
+    print(f"lying: skin pixels above head centre (nose) = {nose_band}")
+    if nose_band < 40:
+        print("FAIL lying: no nose above the head centre")
+        problems += 1
+    else:
+        print("OK  lying: nose points up")
 
     print("problems:", problems)
     return 1 if problems else 0
